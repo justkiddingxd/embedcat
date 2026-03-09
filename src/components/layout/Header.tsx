@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LogIn, LogOut, Cat, ChevronDown, User, Settings } from "lucide-react";
+import { LogIn, LogOut, Cat, ChevronDown, User, Settings, Bookmark } from "lucide-react";
 
-function ProfileDropdown({ onClose }: { onClose: () => void }) {
+function ProfileDropdown({ onClose, onOpenSaved }: { onClose: () => void; onOpenSaved: () => void }) {
   const { data: session } = useSession();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -43,6 +43,13 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
         </button>
         <button
           className="flex w-full items-center gap-2.5 px-3 py-2 text-[11px] text-[#a1a1aa] hover:bg-white/[0.04] hover:text-white transition-colors"
+          onClick={() => { onOpenSaved(); onClose(); }}
+        >
+          <Bookmark className="size-3.5" />
+          Saved Embeds
+        </button>
+        <button
+          className="flex w-full items-center gap-2.5 px-3 py-2 text-[11px] text-[#a1a1aa] hover:bg-white/[0.04] hover:text-white transition-colors"
           onClick={onClose}
         >
           <Settings className="size-3.5" />
@@ -62,7 +69,7 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Header() {
+export function Header({ onOpenSaved }: { onOpenSaved?: () => void }) {
   const { data: session, status } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -100,7 +107,7 @@ export function Header() {
             Sign in
           </Button>
         )}
-        {dropdownOpen && <ProfileDropdown onClose={() => setDropdownOpen(false)} />}
+        {dropdownOpen && <ProfileDropdown onClose={() => setDropdownOpen(false)} onOpenSaved={() => onOpenSaved?.()} />}
       </div>
     </header>
   );

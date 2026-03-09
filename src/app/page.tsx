@@ -8,7 +8,6 @@ import { ComponentsV2Editor } from "@/components/builder/ComponentsV2Editor";
 import MessagePreview from "@/components/preview/MessagePreview";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { JsonEditor } from "@/components/builder/JsonEditor";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogTrigger,
@@ -19,7 +18,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RotateCcw, Layers, Box, AlertTriangle, Share2, Bookmark, Check, Trash2, ExternalLink } from "lucide-react";
+import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink } from "lucide-react";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -175,7 +174,7 @@ function HomeContent() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#09090b]">
-      <Header />
+      <Header onOpenSaved={handleOpenSaved} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex h-9 items-center justify-between border-b border-white/[0.06] px-3">
@@ -212,15 +211,6 @@ function HomeContent() {
                 {shareCopied ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
                 {shareCopied ? "Copied!" : "Share"}
               </button>
-              {session?.user && (
-                <button
-                  onClick={handleOpenSaved}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors"
-                >
-                  <Bookmark className="size-3.5" />
-                  Saved
-                </button>
-              )}
               <JsonEditor />
               <Dialog>
                 <DialogTrigger
