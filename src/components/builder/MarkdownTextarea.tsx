@@ -45,11 +45,24 @@ export function MarkdownTextarea({
 }: MarkdownTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const [toolbar, setToolbar] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+  const [toolbar, setToolbar] = useState<{ x: number; y: number } | null>(null);
+  const [visible, setVisible] = useState(false);
   const selectionRef = useRef<{ start: number; end: number } | null>(null);
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToolbar = useCallback((pos: { x: number; y: number }) => {
+    if (hideTimeout.current) {
+      clearTimeout(hideTimeout.current);
+      hideTimeout.current = null;
+    }
+    setToolbar(pos);
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const hideToolbar = useCallback(() => {
+    setVisible(false);
+    hideTimeout.current = setTimeout(() => setToolbar(null), 150);
+  }, []);
 
   const checkSelection = useCallback(() => {
     const el = textareaRef.current;
@@ -57,7 +70,7 @@ export function MarkdownTextarea({
     const start = el.selectionStart;
     const end = el.selectionEnd;
     if (start === end) {
-      setToolbar(null);
+      hideToolbar();
       return;
     }
     selectionRef.current = { start, end };
@@ -77,8 +90,7 @@ export function MarkdownTextarea({
     let charX = paddingLeft;
     if (ctx) {
       ctx.font = font;
-      const lastLine = lines[lineIndex] || "";
-      charX = paddingLeft + ctx.measureText(lastLine).width;
+      charX = paddingLeft + ctx.measureText(lines[lineIndex] || "").width;
     }
 
     const endText = el.value.substring(0, end);
@@ -86,9 +98,8 @@ export function MarkdownTextarea({
     const endLineIndex = endLines.length - 1;
     let endCharX = paddingLeft;
     if (ctx) {
-      ctx.font = getComputedStyle(el).font;
-      const lastEndLine = endLines[endLineIndex] || "";
-      endCharX = paddingLeft + ctx.measureText(lastEndLine).width;
+      ctx.font = font;
+      endCharX = paddingLeft + ctx.measureText(endLines[endLineIndex] || "").width;
     }
 
     const midX = lineIndex === endLineIndex
@@ -98,8 +109,8 @@ export function MarkdownTextarea({
     const y = rect.top + paddingTop + lineIndex * lineHeight - el.scrollTop - 6;
     const x = rect.left + Math.min(Math.max(midX, 60), el.clientWidth - 60);
 
-    setToolbar({ x, y });
-  }, []);
+    showToolbar({ x, y });
+  }, [showToolbar, hideToolbar]);
 
   const applyFormat = useCallback(
     (format: FormatAction) => {
@@ -107,36 +118,42 @@ export function MarkdownTextarea({
       const sel = selectionRef.current;
       if (!el || !sel) return;
 
-      const before = value.substring(0, sel.start);
-      const selected = value.substring(sel.start, sel.end);
-      const after = value.substring(sel.end);
-      const newValue = before + format.prefix + selected + format.suffix + after;
+      let start = sel.start;
+      let end = sel.end;
+      const raw = value.substring(start, end);
+      const trimmed = raw.replace(/\s+$/, "");
+      const trailingSpace = raw.slice(trimmed.length);
+      end = start + trimmed.length;
+
+      const before = value.substring(0, start);
+      const after = value.substring(end);
+      const newValue = before + format.prefix + trimmed + format.suffix + trailingSpace + after;
       onValueChange(newValue);
 
-      setToolbar(null);
+      hideToolbar();
 
       requestAnimationFrame(() => {
-        const newStart = sel.start + format.prefix.length;
-        const newEnd = newStart + selected.length;
+        const newStart = start + format.prefix.length;
+        const newEnd = newStart + trimmed.length;
         el.focus();
         el.setSelectionRange(newStart, newEnd);
       });
     },
-    [value, onValueChange]
+    [value, onValueChange, hideToolbar]
   );
 
   useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleDown = (e: MouseEvent) => {
       if (
         toolbarRef.current?.contains(e.target as Node) ||
         textareaRef.current?.contains(e.target as Node)
       )
         return;
-      setToolbar(null);
+      hideToolbar();
     };
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, []);
+    document.addEventListener("mousedown", handleDown);
+    return () => document.removeEventListener("mousedown", handleDown);
+  }, [hideToolbar]);
 
   return (
     <div className="relative">
@@ -146,17 +163,23 @@ export function MarkdownTextarea({
         onChange={(e) => onValueChange(e.target.value)}
         onMouseUp={checkSelection}
         onKeyUp={checkSelection}
+        onBlur={(e) => {
+          if (toolbarRef.current?.contains(e.relatedTarget as Node)) return;
+          hideToolbar();
+        }}
         className={className}
         {...props}
       />
       {toolbar && (
         <div
           ref={toolbarRef}
-          className="fixed z-[100] flex items-center gap-0.5 rounded-lg border border-white/[0.1] bg-[#18181b]/95 backdrop-blur-sm px-1 py-0.5 shadow-xl shadow-black/40"
+          className="fixed z-[100] flex items-center gap-0.5 rounded-lg border border-white/[0.1] bg-[#18181b]/95 backdrop-blur-sm px-1 py-0.5 shadow-xl shadow-black/40 transition-all duration-150 ease-out"
           style={{
             left: toolbar.x,
             top: toolbar.y,
-            transform: "translate(-50%, -100%)",
+            transform: `translate(-50%, -100%) scale(${visible ? 1 : 0.9})`,
+            opacity: visible ? 1 : 0,
+            pointerEvents: visible ? "auto" : "none",
           }}
           onMouseDown={(e) => e.preventDefault()}
         >
