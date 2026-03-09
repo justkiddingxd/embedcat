@@ -55,7 +55,7 @@ export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButto
       </Button>
       {confirming && pos && createPortal(
         <div
-          className="fixed z-[9999] whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-0.5 text-[10px] font-medium text-red-400 pointer-events-none"
+          className="fixed z-[9999] whitespace-nowrap rounded-md bg-[#1a0a0a] border border-red-500/30 px-2 py-0.5 text-[10px] font-medium text-red-400 pointer-events-none shadow-lg shadow-black/40"
           style={{
             left: pos.x,
             top: pos.y,
