@@ -144,8 +144,8 @@ export function buildClassicPayload(
     const cleaned = embeds.map(cleanEmbed).filter((e) => Object.keys(e).length > 0);
     if (cleaned.length > 0) payload.embeds = cleaned;
   }
-  if (webhook.username) payload.username = webhook.username;
-  if (webhook.avatar_url) payload.avatar_url = webhook.avatar_url;
+  payload.username = webhook.username || "embed.cat";
+  payload.avatar_url = webhook.avatar_url || "https://rin.ms/embedcat.png";
 
   return payload;
 }
@@ -159,8 +159,8 @@ export function buildComponentsV2Payload(
     components: components.map(cleanComponent),
   };
 
-  if (webhook.username) payload.username = webhook.username;
-  if (webhook.avatar_url) payload.avatar_url = webhook.avatar_url;
+  payload.username = webhook.username || "embed.cat";
+  payload.avatar_url = webhook.avatar_url || "https://rin.ms/embedcat.png";
 
   return payload;
 }
