@@ -8,7 +8,7 @@ datasource db {
 }
 
 model SavedEmbed {
-  id        String   @id @default(cuid())
+  id        String   @id @db.VarChar(12)
   userId    String?
   title     String   @default("")
   mode      String

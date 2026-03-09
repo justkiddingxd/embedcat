@@ -75,11 +75,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = (await req.json()) as { title?: string };
+  const body = (await req.json()) as { title?: string; mode?: string; payload?: unknown };
+  const data: Record<string, unknown> = {};
+  if (body.title !== undefined) data.title = body.title;
+  if (body.mode !== undefined) data.mode = body.mode;
+  if (body.payload !== undefined) data.payload = body.payload as object;
   const updated = await prisma.savedEmbed.update({
     where: { id },
-    data: { title: body.title ?? embed.title },
-    select: { id: true, title: true },
+    data,
+    select: { id: true, title: true, mode: true },
   });
 
   return NextResponse.json(updated);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { nanoid } from "nanoid";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as {
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
 
   const saved = await prisma.savedEmbed.create({
     data: {
+      id: nanoid(7),
       userId,
       title: body.title || "",
       mode: body.mode,
