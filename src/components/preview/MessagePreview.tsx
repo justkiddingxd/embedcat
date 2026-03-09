@@ -629,7 +629,7 @@ export default function MessagePreview() {
   const resolver = useMentionResolver(webhook.url);
 
   const username = webhook.username || "embed.cat";
-  const avatarUrl = webhook.avatar_url || "";
+  const avatarUrl = webhook.avatar_url || "https://rin.ms/embedcat.png";
   const timestamp = currentTimestamp();
 
   const isEmpty =
