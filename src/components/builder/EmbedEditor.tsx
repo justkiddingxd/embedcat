@@ -29,6 +29,7 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { ColorPicker } from "./ColorPicker";
+import { DateTimePicker } from "./DateTimePicker";
 
 function CharCount({ current, max }: { current: number; max: number }) {
   const ratio = current / max;
@@ -482,19 +483,9 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
               </div>
               <div className="space-y-0.5">
                 <Label className="text-[10px] text-muted-foreground">Timestamp</Label>
-                <Input
-                  type="datetime-local"
-                  value={
-                    embed.timestamp ? embed.timestamp.slice(0, 16) : ""
-                  }
-                  onChange={(e) =>
-                    updateEmbed(embed.id, {
-                      timestamp: e.target.value
-                        ? new Date(e.target.value).toISOString()
-                        : undefined,
-                    })
-                  }
-                  className="h-7 text-xs [color-scheme:dark]"
+                <DateTimePicker
+                  value={embed.timestamp}
+                  onChange={(iso) => updateEmbed(embed.id, { timestamp: iso })}
                 />
               </div>
             </div>
