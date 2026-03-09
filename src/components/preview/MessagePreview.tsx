@@ -63,14 +63,19 @@ function ChannelMentionPill({ id }: { id: string }) {
 }
 
 function CustomEmoji({ name, id, animated }: { name: string; id: string; animated: boolean }) {
-  const ext = animated ? "gif" : "webp";
+  const gifUrl = `https://cdn.discordapp.com/emojis/${id}.gif?size=48`;
+  const webpUrl = `https://cdn.discordapp.com/emojis/${id}.webp?size=48`;
   return (
     <img
-      src={`https://cdn.discordapp.com/emojis/${id}.${ext}?size=48`}
+      src={animated ? gifUrl : webpUrl}
       alt={`:${name}:`}
       title={`:${name}:`}
       className="inline-block h-5 w-5 align-[-4px] object-contain"
       draggable={false}
+      onError={(e) => {
+        const img = e.currentTarget;
+        if (img.src === gifUrl) img.src = webpUrl;
+      }}
     />
   );
 }
