@@ -23,7 +23,7 @@ interface MentionResolver {
   resolveRole: (id: string) => { name: string; color: number } | null;
 }
 
-const MentionCtx = createContext<MentionResolver>({
+export const MentionCtx = createContext<MentionResolver>({
   resolveUser: () => null,
   resolveRole: () => null,
 });
@@ -573,7 +573,7 @@ function RenderTopLevel({ component }: { component: TopLevelComponent }) {
   }
 }
 
-function ClassicPreview({
+export function ClassicPreview({
   content,
   embeds,
 }: {
@@ -594,7 +594,7 @@ function ClassicPreview({
   );
 }
 
-function ComponentsV2Preview({
+export function ComponentsV2Preview({
   components,
 }: {
   components: TopLevelComponent[];

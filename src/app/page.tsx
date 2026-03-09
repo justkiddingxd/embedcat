@@ -1,11 +1,15 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
 import { Header } from "@/components/layout/Header";
 import { ClassicBuilder } from "@/components/builder/ClassicBuilder";
 import { ComponentsV2Editor } from "@/components/builder/ComponentsV2Editor";
-import MessagePreview from "@/components/preview/MessagePreview";
+import MessagePreview, {
+  ClassicPreview,
+  ComponentsV2Preview,
+  MentionCtx,
+} from "@/components/preview/MessagePreview";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { JsonEditor } from "@/components/builder/JsonEditor";
 import {
@@ -20,6 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink, Bookmark, Pencil, ChevronDown } from "lucide-react";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
+import { nanoid } from "nanoid";
+import type { DiscordEmbed, EmbedField, TopLevelComponent } from "@/types/discord";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -45,6 +51,71 @@ interface SavedEmbedItem {
   createdAt: string;
 }
 
+type PayloadObj = Record<string, unknown> & {
+  content?: string;
+  embeds?: Record<string, unknown>[];
+  components?: Record<string, unknown>[];
+};
+
+function SavedEmbedPreview({ mode, payload }: { mode: string; payload: Record<string, unknown> }) {
+  const parsed = useMemo(() => {
+    const p = payload as PayloadObj;
+    if (mode === "classic") {
+      const content = (p.content as string) || "";
+      const rawEmbeds = (p.embeds || []) as Record<string, unknown>[];
+      const embeds: DiscordEmbed[] = rawEmbeds.map((e) => ({
+        ...e,
+        id: nanoid(),
+        fields: ((e.fields || []) as Record<string, unknown>[]).map((f) => ({
+          ...f,
+          id: nanoid(),
+        })),
+      })) as unknown as DiscordEmbed[];
+      return { content, embeds };
+    }
+    type JsonObj = Record<string, unknown> & {
+      components?: JsonObj[];
+      items?: JsonObj[];
+    };
+    const assignIds = (obj: JsonObj): JsonObj => {
+      if (typeof obj !== "object" || obj === null) return obj;
+      const result: JsonObj = { ...obj, id: nanoid() };
+      if (Array.isArray(result.components)) {
+        result.components = result.components.map((c) => assignIds(c));
+      }
+      if (Array.isArray(result.items)) {
+        result.items = result.items.map((i) => assignIds(i));
+      }
+      return result;
+    };
+    const rawComponents = (p.components || []) as JsonObj[];
+    const components = rawComponents.map((c) => assignIds(c)) as unknown as TopLevelComponent[];
+    return { components };
+  }, [mode, payload]);
+
+  const dummyResolver = useMemo(() => ({
+    resolveUser: () => null,
+    resolveRole: () => null,
+  }), []);
+
+  return (
+    <MentionCtx.Provider value={dummyResolver}>
+      <div className="border-t border-white/[0.06] bg-[#313338] p-3 max-h-[300px] overflow-y-auto">
+        {mode === "classic" ? (
+          <ClassicPreview
+            content={(parsed as { content: string; embeds: DiscordEmbed[] }).content}
+            embeds={(parsed as { content: string; embeds: DiscordEmbed[] }).embeds}
+          />
+        ) : (
+          <ComponentsV2Preview
+            components={(parsed as { components: TopLevelComponent[] }).components}
+          />
+        )}
+      </div>
+    </MentionCtx.Provider>
+  );
+}
+
 function HomeContent() {
   const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
   const { data: session } = useSession();
@@ -62,6 +133,7 @@ function HomeContent() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -138,10 +210,16 @@ function HomeContent() {
 
   const handleOpenSaved = () => {
     setSavedOpen(true);
+    setConfirmDeleteId(null);
     loadSaved();
   };
 
   const handleDeleteSaved = async (id: string) => {
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      return;
+    }
+    setConfirmDeleteId(null);
     await fetch(`/api/embeds/${id}`, { method: "DELETE" });
     setSavedEmbeds((prev) => prev.filter((e) => e.id !== id));
   };
@@ -377,19 +455,23 @@ function HomeContent() {
                         <ExternalLink className="size-3" />
                         Load
                       </button>
-                      <button
-                        onClick={() => handleDeleteSaved(item.id)}
-                        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#52525b] hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
+                      <div className="relative shrink-0">
+                        {confirmDeleteId === item.id && (
+                          <div className="absolute bottom-full right-0 mb-1 whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400">
+                            You sure?
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleDeleteSaved(item.id)}
+                          onBlur={() => { if (confirmDeleteId === item.id) setConfirmDeleteId(null); }}
+                          className={`inline-flex items-center justify-center rounded-md h-7 w-7 transition-colors ${confirmDeleteId === item.id ? "text-red-400 bg-red-500/10" : "text-[#52525b] hover:text-red-400 hover:bg-red-500/10"}`}
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
                     </div>
                     {expandedId === item.id && (
-                      <div className="border-t border-white/[0.06] bg-[#313338] p-3 max-h-[300px] overflow-y-auto">
-                        <pre className="text-[10px] font-mono text-[#a1a1aa] whitespace-pre-wrap break-all">
-                          {JSON.stringify(item.payload, null, 2)}
-                        </pre>
-                      </div>
+                      <SavedEmbedPreview mode={item.mode} payload={item.payload} />
                     )}
                   </div>
                 ))
