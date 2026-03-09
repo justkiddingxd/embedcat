@@ -116,6 +116,41 @@
   --sidebar-ring: #5865f2;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(88, 101, 242, 0.45) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(88, 101, 242, 0.6);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: #5865f2;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -165,4 +200,28 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
   }
+}
+
+@keyframes fadeInHint {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatHint {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-fade-in-hint {
+  animation: fadeInHint 0.4s ease-out forwards, floatHint 2.5s ease-in-out 0.4s infinite;
 }
