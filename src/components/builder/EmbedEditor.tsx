@@ -320,71 +320,73 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <div className="flex items-center gap-1.5 py-1.5 px-2 bg-white/[0.03]">
-          <Type className="size-3 text-[#71717a]" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] flex-1 text-center text-[#a1a1aa]">
-            Body
-          </span>
-          <div className="size-3" />
-        </div>
-        <div className="px-2 py-1.5 space-y-1">
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className="w-full">
+            <SectionHeader
+              icon={<Type className="size-3" />}
+              label="Body"
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-2 pb-2 pt-1 space-y-1">
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-muted-foreground">Title</Label>
+                  <CharCount
+                    current={embed.title?.length ?? 0}
+                    max={LIMITS.EMBED_TITLE}
+                  />
+                </div>
+                <Input
+                  value={embed.title ?? ""}
+                  onChange={(e) =>
+                    updateEmbed(embed.id, { title: e.target.value })
+                  }
+                  placeholder="Embed title"
+                  maxLength={LIMITS.EMBED_TITLE}
+                  className="h-7 text-xs"
+                />
+              </div>
 
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] text-muted-foreground">Title</Label>
-              <CharCount
-                current={embed.title?.length ?? 0}
-                max={LIMITS.EMBED_TITLE}
-              />
+              <div className="space-y-0.5">
+                <Label className="text-[10px] text-muted-foreground">Title URL</Label>
+                <Input
+                  value={embed.url ?? ""}
+                  onChange={(e) => updateEmbed(embed.id, { url: e.target.value })}
+                  placeholder="https://"
+                  className="h-7 text-xs"
+                />
+              </div>
+
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-muted-foreground">Description</Label>
+                  <CharCount
+                    current={embed.description?.length ?? 0}
+                    max={LIMITS.EMBED_DESCRIPTION}
+                  />
+                </div>
+                <Textarea
+                  value={embed.description ?? ""}
+                  onChange={(e) =>
+                    updateEmbed(embed.id, { description: e.target.value })
+                  }
+                  placeholder="Supports markdown"
+                  maxLength={LIMITS.EMBED_DESCRIPTION}
+                  className="text-xs min-h-[56px]"
+                />
+              </div>
+
+              <div className="space-y-0.5">
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <ColorPicker
+                  color={embed.color ?? 0x5865f2}
+                  onChange={(color) => updateEmbed(embed.id, { color })}
+                />
+              </div>
             </div>
-            <Input
-              value={embed.title ?? ""}
-              onChange={(e) =>
-                updateEmbed(embed.id, { title: e.target.value })
-              }
-              placeholder="Embed title"
-              maxLength={LIMITS.EMBED_TITLE}
-              className="h-7 text-xs"
-            />
-          </div>
-
-          <div className="space-y-0.5">
-            <Label className="text-[10px] text-muted-foreground">Title URL</Label>
-            <Input
-              value={embed.url ?? ""}
-              onChange={(e) => updateEmbed(embed.id, { url: e.target.value })}
-              placeholder="https://"
-              className="h-7 text-xs"
-            />
-          </div>
-
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] text-muted-foreground">Description</Label>
-              <CharCount
-                current={embed.description?.length ?? 0}
-                max={LIMITS.EMBED_DESCRIPTION}
-              />
-            </div>
-            <Textarea
-              value={embed.description ?? ""}
-              onChange={(e) =>
-                updateEmbed(embed.id, { description: e.target.value })
-              }
-              placeholder="Supports markdown"
-              maxLength={LIMITS.EMBED_DESCRIPTION}
-              className="text-xs min-h-[56px]"
-            />
-          </div>
-
-          <div className="space-y-0.5">
-            <Label className="text-[10px] text-muted-foreground">Color</Label>
-            <ColorPicker
-              color={embed.color ?? 0x5865f2}
-              onChange={(color) => updateEmbed(embed.id, { color })}
-            />
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         <div className="border-t border-white/[0.04]" />
 

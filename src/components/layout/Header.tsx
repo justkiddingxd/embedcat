@@ -25,10 +25,10 @@ export function Header() {
               <img
                 src={session.user.image}
                 alt=""
-                className="size-5 rounded-full ring-1 ring-white/[0.06]"
+                className="size-7 rounded-full ring-2 ring-white/[0.1]"
               />
             )}
-            <span className="text-[11px] text-[#a1a1aa]">{session.user.name}</span>
+            <span className="text-[11px] font-bold text-[#e4e4e7]">{session.user.name}</span>
             <Button
               variant="ghost"
               size="icon-xs"

@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { createContext, useContext } from "react";
 import { useBuilderStore } from "@/store/builder-store";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMentionResolver } from "@/hooks/use-mention-resolver";
 import type {
   DiscordEmbed,
   TopLevelComponent,
@@ -17,6 +17,63 @@ import type {
   MediaGalleryItem,
 } from "@/types/discord";
 import { ComponentType, ButtonStyle } from "@/types/discord";
+
+interface MentionResolver {
+  resolveUser: (id: string) => { display_name: string } | null;
+  resolveRole: (id: string) => { name: string; color: number } | null;
+}
+
+const MentionCtx = createContext<MentionResolver>({
+  resolveUser: () => null,
+  resolveRole: () => null,
+});
+
+function UserMentionPill({ id }: { id: string }) {
+  const { resolveUser } = useContext(MentionCtx);
+  const user = resolveUser(id);
+  const label = user ? `@${user.display_name}` : `@Unknown User`;
+  return (
+    <span className="inline rounded-[3px] bg-[#5865f2]/25 px-[2px] text-[#c9cdfb] hover:bg-[#5865f2]/40 cursor-pointer font-medium">
+      {label}
+    </span>
+  );
+}
+
+function RoleMentionPill({ id }: { id: string }) {
+  const { resolveRole } = useContext(MentionCtx);
+  const role = resolveRole(id);
+  const label = role ? `@${role.name}` : `@Unknown Role`;
+  const color = role && role.color !== 0 ? `#${role.color.toString(16).padStart(6, "0")}` : "#c9cdfb";
+  return (
+    <span
+      className="inline rounded-[3px] px-[2px] hover:brightness-125 cursor-pointer font-medium"
+      style={{ backgroundColor: `${color}25`, color }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function ChannelMentionPill({ id }: { id: string }) {
+  return (
+    <span className="inline rounded-[3px] bg-[#5865f2]/25 px-[2px] text-[#c9cdfb] hover:bg-[#5865f2]/40 cursor-pointer font-medium">
+      #channel-{id.slice(-4)}
+    </span>
+  );
+}
+
+function CustomEmoji({ name, id, animated }: { name: string; id: string; animated: boolean }) {
+  const ext = animated ? "gif" : "webp";
+  return (
+    <img
+      src={`https://cdn.discordapp.com/emojis/${id}.${ext}?size=48`}
+      alt={`:${name}:`}
+      title={`:${name}:`}
+      className="inline-block h-5 w-5 align-[-4px] object-contain"
+      draggable={false}
+    />
+  );
+}
 
 function intToHex(color: number | undefined): string {
   if (color === undefined) return "#202225";
@@ -51,12 +108,16 @@ type MarkdownNode =
   | { type: "italic"; children: MarkdownNode[] }
   | { type: "code"; value: string }
   | { type: "spoiler"; children: MarkdownNode[] }
-  | { type: "link"; text: string; url: string };
+  | { type: "link"; text: string; url: string }
+  | { type: "user_mention"; id: string }
+  | { type: "role_mention"; id: string }
+  | { type: "channel_mention"; id: string }
+  | { type: "custom_emoji"; name: string; id: string; animated: boolean };
 
 function parseInlineMarkdown(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = [];
   const regex =
-    /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)/g;
+    /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)|<@!?(\d{17,20})>|<@&(\d{17,20})>|<#(\d{17,20})>|<(a?):(\w+):(\d{17,20})>/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -74,6 +135,14 @@ function parseInlineMarkdown(text: string): MarkdownNode[] {
       nodes.push({ type: "spoiler", children: [{ type: "text", value: match[4] }] });
     } else if (match[5] !== undefined && match[6] !== undefined) {
       nodes.push({ type: "link", text: match[5], url: match[6] });
+    } else if (match[7] !== undefined) {
+      nodes.push({ type: "user_mention", id: match[7] });
+    } else if (match[8] !== undefined) {
+      nodes.push({ type: "role_mention", id: match[8] });
+    } else if (match[9] !== undefined) {
+      nodes.push({ type: "channel_mention", id: match[9] });
+    } else if (match[11] !== undefined && match[12] !== undefined) {
+      nodes.push({ type: "custom_emoji", name: match[11], id: match[12], animated: match[10] === "a" });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -134,6 +203,14 @@ function RenderInline({ nodes }: { nodes: MarkdownNode[] }) {
                 {node.text}
               </a>
             );
+          case "user_mention":
+            return <UserMentionPill key={i} id={node.id} />;
+          case "role_mention":
+            return <RoleMentionPill key={i} id={node.id} />;
+          case "channel_mention":
+            return <ChannelMentionPill key={i} id={node.id} />;
+          case "custom_emoji":
+            return <CustomEmoji key={i} name={node.name} id={node.id} animated={node.animated} />;
         }
       })}
     </>
@@ -547,6 +624,7 @@ export default function MessagePreview() {
   const embeds = useBuilderStore((s) => s.embeds);
   const components = useBuilderStore((s) => s.components);
   const webhook = useBuilderStore((s) => s.webhook);
+  const resolver = useMentionResolver(webhook.url);
 
   const username = webhook.username || "embed.cat";
   const avatarUrl = webhook.avatar_url || "";
@@ -558,7 +636,8 @@ export default function MessagePreview() {
       : components.length === 0;
 
   return (
-    <ScrollArea className="h-full">
+    <MentionCtx.Provider value={resolver}>
+    <div className="h-full overflow-y-auto">
       <div className="min-h-full bg-[#313338] p-4" style={{ minHeight: "200px" }}>
         {isEmpty ? (
           <EmptyState />
@@ -605,6 +684,7 @@ export default function MessagePreview() {
           </div>
         )}
       </div>
-    </ScrollArea>
+    </div>
+    </MentionCtx.Provider>
   );
 }

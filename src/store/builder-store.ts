@@ -332,11 +332,11 @@ export const useBuilderStore = create<BuilderState>()(
   },
 
   reset: () =>
-    set({
-      content: "",
-      embeds: [createEmptyEmbed()],
-      components: [createContainer()],
-    }),
+    set((s) =>
+      s.mode === "classic"
+        ? { content: "", embeds: [createEmptyEmbed()] }
+        : { components: [createContainer()] }
+    ),
     }),
     {
       name: "embedcat-builder",

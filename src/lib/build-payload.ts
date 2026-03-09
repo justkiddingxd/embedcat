@@ -165,6 +165,49 @@ export function buildComponentsV2Payload(
   return payload;
 }
 
+// --- Nadeko format ---
+
+export function buildNadekoPayload(content: string, embeds: DiscordEmbed[]) {
+  const embed = embeds[0];
+  if (!embed && !content) return {};
+  const result: Record<string, unknown> = {};
+  if (content) result.plainText = content;
+  if (embed) {
+    if (embed.title) result.title = embed.title;
+    if (embed.description) result.description = embed.description;
+    if (embed.url) result.url = embed.url;
+    if (embed.color !== undefined) result.color = embed.color;
+    if (embed.author?.name) {
+      result.author = { name: embed.author.name };
+      if (embed.author.icon_url) (result.author as Record<string, unknown>).icon_url = embed.author.icon_url;
+      if (embed.author.url) (result.author as Record<string, unknown>).url = embed.author.url;
+    }
+    if (embed.footer?.text) {
+      result.footer = { text: embed.footer.text };
+      if (embed.footer.icon_url) (result.footer as Record<string, unknown>).icon_url = embed.footer.icon_url;
+    }
+    if (embed.thumbnail?.url) result.thumbnail = embed.thumbnail.url;
+    if (embed.image?.url) result.image = embed.image.url;
+    if (embed.fields.length > 0) {
+      result.fields = embed.fields.map((f) => ({
+        name: f.name,
+        value: f.value,
+        inline: f.inline ?? false,
+      }));
+    }
+  }
+  return result;
+}
+
+export function buildDiscohookPayload(content: string, embeds: DiscordEmbed[]) {
+  const result: Record<string, unknown> = {};
+  if (content) result.content = content;
+  const cleaned = embeds.map(cleanEmbed).filter((e) => Object.keys(e).length > 0);
+  result.embeds = cleaned.length > 0 ? cleaned : [];
+  result.components = [];
+  return result;
+}
+
 // --- Send via Webhook ---
 
 export async function sendWebhookMessage(

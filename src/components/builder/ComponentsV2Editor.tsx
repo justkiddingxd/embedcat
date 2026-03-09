@@ -194,11 +194,15 @@ function ContainerChildCard({
   index,
   total,
   containerId,
+  dragProps,
+  gripProps,
 }: {
   child: ContainerChild;
   index: number;
   total: number;
   containerId: string;
+  dragProps?: Record<string, unknown>;
+  gripProps?: Record<string, unknown>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { updateComponent } = useBuilderStore();
@@ -240,7 +244,7 @@ function ContainerChildCard({
   };
 
   return (
-    <div className="rounded-md border border-white/[0.04] bg-white/[0.02] overflow-hidden">
+    <div className="rounded-md border border-white/[0.04] bg-white/[0.02] overflow-hidden" {...dragProps}>
       <ComponentCardHeader
         type={child.type}
         label={meta.label}
@@ -253,6 +257,7 @@ function ContainerChildCard({
         onMoveUp={() => moveChild("up")}
         onMoveDown={() => moveChild("down")}
         onDelete={removeChild}
+        gripProps={gripProps}
       />
       {!collapsed && (
         <div className="px-3 pb-2 pt-1">
@@ -386,6 +391,22 @@ function ContainerEditor({
   component: ContainerComponent;
   onChange: (updater: (c: TopLevelComponent) => TopLevelComponent) => void;
 }) {
+  const reorderChildren = useCallback(
+    (from: number, to: number) => {
+      onChange((c) => {
+        if (c.type !== ComponentType.Container) return c;
+        const children = [...c.components];
+        const [moved] = children.splice(from, 1);
+        children.splice(to, 0, moved);
+        return { ...c, components: children };
+      });
+    },
+    [onChange]
+  );
+
+  const { getDragProps: getChildDragProps, getGripProps: getChildGripProps, getContainerProps: getChildContainerProps } =
+    useDragReorder(reorderChildren);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
@@ -434,7 +455,7 @@ function ContainerEditor({
             </Badge>
           </span>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" {...getChildContainerProps()}>
           {component.components.map((child, i) => (
             <ContainerChildCard
               key={child.id}
@@ -442,6 +463,8 @@ function ContainerEditor({
               index={i}
               total={component.components.length}
               containerId={component.id}
+              dragProps={getChildDragProps(i)}
+              gripProps={getChildGripProps(i)}
             />
           ))}
         </div>

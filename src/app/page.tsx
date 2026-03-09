@@ -186,6 +186,17 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <div className="fixed bottom-2 right-3 text-xs text-[#71717a]">
+        Built with ❤️ by{" "}
+        <a
+          href="https://rin.ms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#a1a1aa] hover:text-white transition-colors"
+        >
+          rin.ms
+        </a>
+      </div>
     </div>
   );
 }

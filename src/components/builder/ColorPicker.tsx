@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Pipette } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,12 +12,6 @@ const DISCORD_PRESETS = [
   0x206694, 0x71368a, 0xad1457, 0x992d22, 0xa84300,
 ];
 
-const GRADIENT_COLORS = [
-  "#ff0000", "#ff8000", "#ffff00", "#80ff00", "#00ff00",
-  "#00ff80", "#00ffff", "#0080ff", "#0000ff", "#8000ff",
-  "#ff00ff", "#ff0080",
-];
-
 function intToHex(n: number): string {
   return `#${n.toString(16).padStart(6, "0")}`;
 }
@@ -26,31 +20,95 @@ function hexToInt(hex: string): number {
   return parseInt(hex.replace("#", ""), 16);
 }
 
-function drawGradient(canvas: HTMLCanvasElement) {
+function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  return [
+    Math.round((r + m) * 255),
+    Math.round((g + m) * 255),
+    Math.round((b + m) * 255),
+  ];
+}
+
+function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = 60 * (((g - b) / d) % 6);
+    else if (max === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  if (h < 0) h += 360;
+  const s = max === 0 ? 0 : d / max;
+  return [h, s, max];
+}
+
+function intToRgb(n: number): [number, number, number] {
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+}
+
+function rgbToInt(r: number, g: number, b: number): number {
+  return (r << 16) | (g << 8) | b;
+}
+
+function drawSvCanvas(canvas: HTMLCanvasElement, hue: number) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const w = canvas.width;
   const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
 
-  const hueGradient = ctx.createLinearGradient(0, 0, w, 0);
-  GRADIENT_COLORS.forEach((c, i) => {
-    hueGradient.addColorStop(i / (GRADIENT_COLORS.length - 1), c);
-  });
-  ctx.fillStyle = hueGradient;
+  const [hr, hg, hb] = hsvToRgb(hue, 1, 1);
+  const hueColor = `rgb(${hr},${hg},${hb})`;
+
+  ctx.fillStyle = hueColor;
   ctx.fillRect(0, 0, w, h);
 
-  const whiteGradient = ctx.createLinearGradient(0, 0, 0, h / 2);
-  whiteGradient.addColorStop(0, "rgba(255,255,255,0.8)");
-  whiteGradient.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = whiteGradient;
-  ctx.fillRect(0, 0, w, h / 2);
+  const whiteGrad = ctx.createLinearGradient(0, 0, w, 0);
+  whiteGrad.addColorStop(0, "rgba(255,255,255,1)");
+  whiteGrad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = whiteGrad;
+  ctx.fillRect(0, 0, w, h);
 
-  const blackGradient = ctx.createLinearGradient(0, h / 2, 0, h);
-  blackGradient.addColorStop(0, "rgba(0,0,0,0)");
-  blackGradient.addColorStop(1, "rgba(0,0,0,0.8)");
-  ctx.fillStyle = blackGradient;
-  ctx.fillRect(0, h / 2, w, h / 2);
+  const blackGrad = ctx.createLinearGradient(0, 0, 0, h);
+  blackGrad.addColorStop(0, "rgba(0,0,0,0)");
+  blackGrad.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.fillStyle = blackGrad;
+  ctx.fillRect(0, 0, w, h);
 }
+
+function drawHueBar(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const w = canvas.width;
+  const h = canvas.height;
+  const grad = ctx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, "#ff0000");
+  grad.addColorStop(1 / 6, "#ffff00");
+  grad.addColorStop(2 / 6, "#00ff00");
+  grad.addColorStop(3 / 6, "#00ffff");
+  grad.addColorStop(4 / 6, "#0000ff");
+  grad.addColorStop(5 / 6, "#ff00ff");
+  grad.addColorStop(1, "#ff0000");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+const SV_WIDTH = 216;
+const SV_HEIGHT = 150;
+const HUE_WIDTH = 216;
+const HUE_HEIGHT = 14;
 
 interface ColorPickerProps {
   color: number;
@@ -60,45 +118,116 @@ interface ColorPickerProps {
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
   const [hexInput, setHexInput] = useState(intToHex(color));
   const [supportsEyeDropper, setSupportsEyeDropper] = useState(false);
-  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
+
+  const rgb = intToRgb(color);
+  const [h, s, v] = rgbToHsv(...rgb);
+
+  const hueRef = useRef(h);
+  const [hue, setHueState] = useState(h);
+  const [sat, setSat] = useState(s);
+  const [val, setVal] = useState(v);
+
+  const svCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const hueCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const draggingSv = useRef(false);
+  const draggingHue = useRef(false);
+  const internalUpdate = useRef(false);
 
   useEffect(() => {
     setSupportsEyeDropper("EyeDropper" in window);
   }, []);
 
   useEffect(() => {
+    if (internalUpdate.current) {
+      internalUpdate.current = false;
+      return;
+    }
+    const [nr, ng, nb] = intToRgb(color);
+    const [nh, ns, nv] = rgbToHsv(nr, ng, nb);
+    if (ns > 0.01) {
+      hueRef.current = nh;
+      setHueState(nh);
+    }
+    setSat(ns);
+    setVal(nv);
     setHexInput(intToHex(color));
   }, [color]);
 
-  const canvasRefCallback = useCallback((node: HTMLCanvasElement | null) => {
+  useEffect(() => {
+    if (svCanvasRef.current) drawSvCanvas(svCanvasRef.current, hue);
+  }, [hue]);
+
+  const svCanvasRefCb = useCallback((node: HTMLCanvasElement | null) => {
     if (node) {
-      setCanvasEl(node);
-      drawGradient(node);
+      svCanvasRef.current = node;
+      drawSvCanvas(node, hueRef.current);
     }
   }, []);
 
-  const pickFromCanvas = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!canvasEl) return;
-      const ctx = canvasEl.getContext("2d");
-      if (!ctx) return;
-      const rect = canvasEl.getBoundingClientRect();
-      const x = Math.round((e.clientX - rect.left) * (canvasEl.width / rect.width));
-      const y = Math.round((e.clientY - rect.top) * (canvasEl.height / rect.height));
-      const pixel = ctx.getImageData(x, y, 1, 1).data;
-      const hex = ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]);
-      onChange(hex);
+  const hueCanvasRefCb = useCallback((node: HTMLCanvasElement | null) => {
+    if (node) {
+      hueCanvasRef.current = node;
+      drawHueBar(node);
+    }
+  }, []);
+
+  const applyColor = useCallback(
+    (newH: number, newS: number, newV: number) => {
+      const [r, g, b] = hsvToRgb(newH, newS, newV);
+      const int = rgbToInt(r, g, b);
+      internalUpdate.current = true;
+      setHexInput(intToHex(int));
+      onChange(int);
     },
-    [onChange, canvasEl]
+    [onChange]
   );
 
-  const handleCanvasDrag = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (e.buttons !== 1) return;
-      pickFromCanvas(e);
+  const handleSvInteraction = useCallback(
+    (clientX: number, clientY: number) => {
+      const canvas = svCanvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+      const newS = x;
+      const newV = 1 - y;
+      setSat(newS);
+      setVal(newV);
+      applyColor(hue, newS, newV);
     },
-    [pickFromCanvas]
+    [hue, applyColor]
   );
+
+  const handleHueInteraction = useCallback(
+    (clientX: number) => {
+      const canvas = hueCanvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const newH = x * 360;
+      hueRef.current = newH;
+      setHueState(newH);
+      applyColor(newH, sat, val);
+    },
+    [sat, val, applyColor]
+  );
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (draggingSv.current) handleSvInteraction(e.clientX, e.clientY);
+      if (draggingHue.current) handleHueInteraction(e.clientX);
+    };
+    const onUp = () => {
+      draggingSv.current = false;
+      draggingHue.current = false;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [handleSvInteraction, handleHueInteraction]);
 
   const handleHexChange = useCallback(
     (value: string) => {
@@ -122,6 +251,9 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
   }, [onChange]);
 
   const hexValue = intToHex(color);
+  const svThumbLeft = `${sat * 100}%`;
+  const svThumbTop = `${(1 - val) * 100}%`;
+  const hueThumbLeft = `${(hue / 360) * 100}%`;
 
   return (
     <Popover>
@@ -142,14 +274,45 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
         sideOffset={4}
       >
         <div className="p-2 space-y-2">
-          <canvas
-            ref={canvasRefCallback}
-            width={216}
-            height={80}
-            className="w-full h-[80px] rounded cursor-crosshair"
-            onClick={pickFromCanvas}
-            onMouseMove={handleCanvasDrag}
-          />
+          <div
+            className="relative rounded cursor-crosshair overflow-hidden"
+            style={{ width: "100%", height: `${SV_HEIGHT}px` }}
+            onPointerDown={(e) => {
+              draggingSv.current = true;
+              handleSvInteraction(e.clientX, e.clientY);
+            }}
+          >
+            <canvas
+              ref={svCanvasRefCb}
+              width={SV_WIDTH}
+              height={SV_HEIGHT}
+              className="w-full h-full block"
+            />
+            <div
+              className="absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(0,0,0,0.3)] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ left: svThumbLeft, top: svThumbTop }}
+            />
+          </div>
+
+          <div
+            className="relative rounded-sm cursor-pointer overflow-hidden"
+            style={{ width: "100%", height: `${HUE_HEIGHT}px` }}
+            onPointerDown={(e) => {
+              draggingHue.current = true;
+              handleHueInteraction(e.clientX);
+            }}
+          >
+            <canvas
+              ref={hueCanvasRefCb}
+              width={HUE_WIDTH}
+              height={HUE_HEIGHT}
+              className="w-full h-full block"
+            />
+            <div
+              className="absolute top-1/2 w-2 h-full rounded-sm border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ left: hueThumbLeft }}
+            />
+          </div>
 
           <div className="grid grid-cols-10 gap-1">
             {DISCORD_PRESETS.map((preset) => (

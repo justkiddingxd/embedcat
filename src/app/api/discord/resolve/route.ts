@@ -1,0 +1,130 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const ID_REGEX = /^\d{17,20}$/;
+const WEBHOOK_REGEX = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/(\d+)\/(.+)$/;
+
+interface CacheEntry<T> {
+  data: T;
+  ts: number;
+}
+
+const userCache = new Map<string, CacheEntry<UserData>>();
+const roleCache = new Map<string, CacheEntry<RoleData[]>>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+interface UserData {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar: string | null;
+}
+
+interface RoleData {
+  id: string;
+  name: string;
+  color: number;
+}
+
+async function fetchUser(id: string, token: string): Promise<UserData | null> {
+  const cached = userCache.get(id);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
+  const res = await fetch(`https://discord.com/api/v10/users/${id}`, {
+    headers: { Authorization: `Bot ${token}` },
+  });
+  if (!res.ok) return null;
+
+  const user = (await res.json()) as {
+    id: string;
+    username: string;
+    global_name: string | null;
+    avatar: string | null;
+  };
+
+  const data: UserData = {
+    id: user.id,
+    username: user.username,
+    display_name: user.global_name || user.username,
+    avatar: user.avatar
+      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=64`
+      : null,
+  };
+
+  userCache.set(id, { data, ts: Date.now() });
+  return data;
+}
+
+async function fetchGuildRoles(
+  webhookUrl: string,
+  token: string
+): Promise<RoleData[]> {
+  const cached = roleCache.get(webhookUrl);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
+  const whMatch = webhookUrl.match(WEBHOOK_REGEX);
+  if (!whMatch) return [];
+
+  const whRes = await fetch(
+    `https://discord.com/api/v10/webhooks/${whMatch[2]}/${whMatch[3]}`,
+  );
+  if (!whRes.ok) return [];
+
+  const webhook = (await whRes.json()) as { guild_id?: string };
+  if (!webhook.guild_id) return [];
+
+  const rolesRes = await fetch(
+    `https://discord.com/api/v10/guilds/${webhook.guild_id}/roles`,
+    { headers: { Authorization: `Bot ${token}` } }
+  );
+  if (!rolesRes.ok) return [];
+
+  const roles = (await rolesRes.json()) as Array<{
+    id: string;
+    name: string;
+    color: number;
+  }>;
+
+  const data = roles.map((r) => ({ id: r.id, name: r.name, color: r.color }));
+  roleCache.set(webhookUrl, { data, ts: Date.now() });
+  return data;
+}
+
+export async function POST(req: NextRequest) {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: "Bot token not configured" }, { status: 500 });
+  }
+
+  const body = (await req.json()) as {
+    userIds?: string[];
+    roleIds?: string[];
+    webhookUrl?: string;
+  };
+
+  const results: {
+    users: Record<string, UserData>;
+    roles: Record<string, RoleData>;
+  } = { users: {}, roles: {} };
+
+  const userIds = (body.userIds || []).filter((id) => ID_REGEX.test(id));
+  if (userIds.length > 0) {
+    const fetched = await Promise.all(
+      userIds.slice(0, 20).map((id) => fetchUser(id, token))
+    );
+    fetched.forEach((u) => {
+      if (u) results.users[u.id] = u;
+    });
+  }
+
+  const roleIds = (body.roleIds || []).filter((id) => ID_REGEX.test(id));
+  if (roleIds.length > 0 && body.webhookUrl) {
+    const allRoles = await fetchGuildRoles(body.webhookUrl, token);
+    for (const role of allRoles) {
+      if (roleIds.includes(role.id)) {
+        results.roles[role.id] = role;
+      }
+    }
+  }
+
+  return NextResponse.json(results);
+}
