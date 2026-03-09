@@ -37,23 +37,24 @@ export function WebhookPanel() {
   const isValidUrl = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/.+$/.test(webhook.url);
 
   return (
-    <div className="space-y-2 rounded-lg border border-white/[0.06] bg-[#111113] p-3">
-      <div className="flex items-center gap-2">
+    <div className="space-y-1.5 rounded-md border border-white/[0.06] bg-[#111113] p-2">
+      <div className="flex items-center gap-1.5">
         <Input
           placeholder="https://discord.com/api/webhooks/..."
           value={webhook.url}
           onChange={(e) => setWebhook({ url: e.target.value })}
-          className="flex-1 border-white/[0.06] bg-[#0a0a0b] text-[#fafafa] placeholder:text-[#52525b]"
+          className="h-7 flex-1 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"
         />
         <Button
           onClick={handleSend}
           disabled={sending || !isValidUrl}
-          className="gap-2 bg-[#5865f2] text-white hover:bg-[#4752c4] disabled:opacity-50 transition-colors"
+          size="sm"
+          className="h-7 gap-1.5 bg-[#5865f2] px-3 text-xs text-white hover:bg-[#4752c4] disabled:opacity-50 transition-colors"
         >
           {sending ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-3 animate-spin" />
           ) : (
-            <Send className="size-4" />
+            <Send className="size-3" />
           )}
           Send
         </Button>
@@ -61,57 +62,57 @@ export function WebhookPanel() {
 
       {result && (
         <div
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
+          className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs ${
             result.success
               ? "bg-green-900/30 text-green-400"
               : "bg-red-900/30 text-red-400"
           }`}
         >
           {result.success ? (
-            <CheckCircle2 className="size-4" />
+            <CheckCircle2 className="size-3" />
           ) : (
-            <AlertCircle className="size-4" />
+            <AlertCircle className="size-3" />
           )}
-          {result.success ? "Message sent!" : result.error}
+          {result.success ? "Sent!" : result.error}
         </div>
       )}
 
       <Collapsible open={optionsOpen} onOpenChange={setOptionsOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#a1a1aa] transition-colors">
+        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-[#52525b] hover:text-[#a1a1aa] transition-colors">
           <ChevronDown
-            className={`size-3.5 transition-transform duration-200 ${optionsOpen ? "rotate-0" : "-rotate-90"}`}
+            className={`size-3 transition-transform duration-200 ${optionsOpen ? "rotate-0" : "-rotate-90"}`}
           />
-          Webhook Options
+          Options
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">Username Override</label>
+        <CollapsibleContent className="mt-1.5 space-y-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-medium text-[#52525b]">Username</label>
               <Input
                 placeholder="embed.cat"
                 value={webhook.username || ""}
                 onChange={(e) => setWebhook({ username: e.target.value })}
                 maxLength={LIMITS.WEBHOOK_USERNAME}
-                className="border-white/[0.06] bg-[#0a0a0b] text-[#fafafa] placeholder:text-[#52525b]"
+                className="h-7 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">Avatar URL</label>
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-medium text-[#52525b]">Avatar URL</label>
               <Input
                 placeholder="https://..."
                 value={webhook.avatar_url || ""}
                 onChange={(e) => setWebhook({ avatar_url: e.target.value })}
-                className="border-white/[0.06] bg-[#0a0a0b] text-[#fafafa] placeholder:text-[#52525b]"
+                className="h-7 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">Thread ID (optional)</label>
+          <div className="space-y-0.5">
+            <label className="text-[10px] font-medium text-[#52525b]">Thread ID</label>
             <Input
               placeholder="Thread or forum post ID"
               value={webhook.thread_id || ""}
               onChange={(e) => setWebhook({ thread_id: e.target.value })}
-              className="border-white/[0.06] bg-[#0a0a0b] text-[#fafafa] placeholder:text-[#52525b]"
+              className="h-7 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"
             />
           </div>
         </CollapsibleContent>

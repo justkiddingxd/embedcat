@@ -35,26 +35,26 @@ function EmbedCard({
   const titlePreview = embed.title?.slice(0, 40) || "Untitled embed";
 
   return (
-    <div className="rounded-lg bg-[#111113] border border-white/[0.06] overflow-hidden">
+    <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden">
       <div
-        className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer select-none"
         onClick={() => setCollapsed(!collapsed)}
       >
         <div
-          className="w-1 h-6 rounded-full shrink-0"
+          className="w-0.5 h-5 rounded-full shrink-0"
           style={{ backgroundColor: colorHex }}
         />
-        <GripVertical className="size-3.5 text-[#3f3f46] shrink-0" />
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <GripVertical className="size-3 text-[#3f3f46] shrink-0" />
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <Badge
             variant="secondary"
-            className="shrink-0 bg-[#18181b] text-[#71717a] border-0 text-[10px] px-1.5"
+            className="shrink-0 bg-[#18181b] text-[#71717a] border-0 text-[10px] px-1 h-4"
           >
             {index + 1}
           </Badge>
-          <span className="text-sm text-[#e4e4e7] truncate">{titlePreview}</span>
+          <span className="text-xs text-[#e4e4e7] truncate">{titlePreview}</span>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-0 shrink-0">
           <Button
             variant="ghost"
             size="icon-xs"
@@ -103,7 +103,7 @@ function EmbedCard({
             <Trash2 className="size-3" />
           </Button>
           <ChevronDown
-            className={`size-3.5 text-[#52525b] ml-1 transition-transform duration-200 ${
+            className={`size-3 text-[#52525b] ml-0.5 transition-transform duration-200 ${
               collapsed ? "" : "rotate-180"
             }`}
           />
@@ -123,14 +123,14 @@ export function ClassicBuilder() {
   const { content, setContent, embeds, addEmbed } = useBuilderStore();
 
   return (
-    <div className="space-y-2">
-      <div className="rounded-lg bg-[#111113] border border-white/[0.06] p-3 space-y-1.5">
+    <div className="space-y-1.5">
+      <div className="rounded-md bg-[#111113] border border-white/[0.06] p-2 space-y-1">
         <div className="flex items-center justify-between">
-          <Label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">
-            Message Content
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52525b]">
+            Content
           </Label>
           <span
-            className={`text-[11px] tabular-nums font-mono ${
+            className={`text-[10px] tabular-nums font-mono ${
               content.length > LIMITS.CONTENT
                 ? "text-red-400"
                 : content.length > LIMITS.CONTENT * 0.9
@@ -144,23 +144,23 @@ export function ClassicBuilder() {
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Message content — appears above embeds"
+          placeholder="Message content"
           maxLength={LIMITS.CONTENT}
-          className="bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] placeholder:text-[#3f3f46] text-sm min-h-[60px]"
+          className="bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] placeholder:text-[#3f3f46] text-xs min-h-[48px]"
         />
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <Label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between px-0.5">
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52525b]">
             Embeds
           </Label>
-          <span className="text-[11px] tabular-nums font-mono text-[#3f3f46]">
+          <span className="text-[10px] tabular-nums font-mono text-[#3f3f46]">
             {embeds.length}/{LIMITS.EMBEDS_PER_MESSAGE}
           </span>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           {embeds.map((embed, i) => (
             <EmbedCard
               key={embed.id}
@@ -176,9 +176,9 @@ export function ClassicBuilder() {
             variant="outline"
             size="sm"
             onClick={() => addEmbed()}
-            className="w-full border-dashed border-white/[0.08] text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 bg-transparent transition-colors"
+            className="h-7 w-full border-dashed border-white/[0.08] text-[11px] text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 bg-transparent transition-colors"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3" />
             Add Embed
           </Button>
         )}
