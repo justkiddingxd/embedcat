@@ -432,10 +432,16 @@ function HomeContent() {
         </div>
       </div>
       {savedOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSavedOpen(false)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.down = "1"; }}
+          onMouseUp={(e) => {
+            if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.down === "1") setSavedOpen(false);
+            (e.currentTarget as HTMLElement).dataset.down = "";
+          }}
+        >
           <div
-            className="w-full max-w-2xl max-h-[80vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl max-h-[85vh] min-h-[50vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-[#e4e4e7]">Saved Embeds</h2>
