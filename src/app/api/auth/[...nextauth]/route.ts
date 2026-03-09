@@ -1,5 +1,6 @@
 import NextAuth, { type AuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import { prisma } from "@/lib/prisma";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -14,6 +15,32 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, profile }) {
+      try {
+        const discordProfile = profile as { id?: string; username?: string; avatar?: string } | undefined;
+        const discordId = discordProfile?.id || user.id;
+        if (discordId) {
+          await prisma.appUser.upsert({
+            where: { discordId },
+            update: {
+              username: discordProfile?.username || user.name || "",
+              displayName: user.name || "",
+              avatar: user.image || null,
+              lastLogin: new Date(),
+            },
+            create: {
+              discordId,
+              username: discordProfile?.username || user.name || "",
+              displayName: user.name || "",
+              avatar: user.image || null,
+            },
+          });
+        }
+      } catch {
+        void 0;
+      }
+      return true;
+    },
     async session({ session, token }) {
       if (session.user) {
         (session.user as { id?: string }).id = token.sub;

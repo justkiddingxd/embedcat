@@ -47,3 +47,14 @@ model UnlimitedUser {
   addedBy   String
   createdAt DateTime @default(now())
 }
+
+model AppUser {
+  discordId   String   @id
+  username    String
+  displayName String   @default("")
+  avatar      String?
+  firstLogin  DateTime @default(now())
+  lastLogin   DateTime @default(now())
+
+  @@index([lastLogin])
+}
