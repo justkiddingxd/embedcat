@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { ButtonStyle, type ButtonComponent } from "@/types/discord";
 
@@ -37,20 +36,27 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
         <Select
           value={String(button.style)}
           onValueChange={(val) => {
+            if (val === null) return;
             const style = Number(val) as ButtonStyle;
             const updates: Partial<ButtonComponent> = { style };
             if (style === ButtonStyle.Link) {
-              updates.url = updates.url || "";
-              updates.custom_id = undefined;
+              updates.url = button.url || "";
+              delete updates.custom_id;
             } else {
-              updates.custom_id = updates.custom_id || button.custom_id || "";
-              updates.url = undefined;
+              updates.custom_id = button.custom_id || "";
+              delete updates.url;
             }
             onChange(updates);
           }}
         >
           <SelectTrigger className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-            <SelectValue />
+            <span className="flex items-center gap-2">
+              <span
+                className="size-2.5 rounded-full shrink-0"
+                style={{ background: STYLE_OPTIONS.find((o) => o.value === button.style)?.color ?? "#4e5058" }}
+              />
+              {STYLE_OPTIONS.find((o) => o.value === button.style)?.label ?? "Secondary"}
+            </span>
           </SelectTrigger>
           <SelectContent className="border-white/[0.08] bg-[#111113]">
             {STYLE_OPTIONS.map((opt) => (

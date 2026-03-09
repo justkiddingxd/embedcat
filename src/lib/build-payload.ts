@@ -53,8 +53,11 @@ function cleanButton(b: ButtonComponent): Record<string, unknown> {
   const result: Record<string, unknown> = { type: clean.type, style: clean.style };
   if (clean.label) result.label = clean.label;
   if (clean.emoji) result.emoji = clean.emoji;
-  if (clean.url) result.url = clean.url;
-  if (clean.custom_id) result.custom_id = clean.custom_id;
+  if (clean.style === 5) {
+    if (clean.url) result.url = clean.url;
+  } else {
+    if (clean.custom_id) result.custom_id = clean.custom_id;
+  }
   if (clean.disabled) result.disabled = clean.disabled;
   return result;
 }
