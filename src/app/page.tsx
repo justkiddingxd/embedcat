@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
 import { Header } from "@/components/layout/Header";
 import { ClassicBuilder } from "@/components/builder/ClassicBuilder";
@@ -19,7 +19,10 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RotateCcw, Layers, Box, AlertTriangle } from "lucide-react";
+import { RotateCcw, Layers, Box, AlertTriangle, Share2, Bookmark, Check, Trash2, ExternalLink } from "lucide-react";
+import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
+import { useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const STORAGE_KEY = "embedcat-preview-width";
 const MIN_WIDTH = 280;
@@ -35,16 +38,103 @@ function loadWidth(): number {
   return n;
 }
 
-export default function Home() {
-  const { mode, setMode, reset } = useBuilderStore();
+interface SavedEmbedItem {
+  id: string;
+  title: string;
+  mode: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+function HomeContent() {
+  const { mode, setMode, reset, content, embeds, components, webhook, importFromJson } = useBuilderStore();
+  const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [previewWidth, setPreviewWidth] = useState(DEFAULT_WIDTH);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [savedEmbeds, setSavedEmbeds] = useState<SavedEmbedItem[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     setPreviewWidth(loadWidth());
   }, []);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    const id = searchParams.get("id");
+    if (!id) return;
+    loadedRef.current = true;
+    fetch(`/api/embeds/${id}`)
+      .then((r) => r.json())
+      .then((data: SavedEmbedItem) => {
+        if (data.mode) {
+          useBuilderStore.getState().setMode(data.mode as "classic" | "components_v2");
+          setTimeout(() => {
+            importFromJson(JSON.stringify(data.payload));
+          }, 50);
+        }
+      })
+      .catch(() => { void 0; });
+  }, [searchParams, importFromJson]);
+
+  const handleShare = async () => {
+    setShareLoading(true);
+    try {
+      const payload =
+        mode === "classic"
+          ? buildClassicPayload(content, embeds, webhook)
+          : buildComponentsV2Payload(components, webhook);
+      const res = await fetch("/api/embeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, payload, title: (embeds[0]?.title || "Untitled") }),
+      });
+      const data = (await res.json()) as { id: string };
+      const url = `${window.location.origin}?id=${data.id}`;
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      router.replace(`?id=${data.id}`);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch { void 0; }
+    setShareLoading(false);
+  };
+
+  const loadSaved = async () => {
+    setSavedLoading(true);
+    try {
+      const res = await fetch("/api/embeds");
+      if (res.ok) {
+        setSavedEmbeds((await res.json()) as SavedEmbedItem[]);
+      }
+    } catch { void 0; }
+    setSavedLoading(false);
+  };
+
+  const handleOpenSaved = () => {
+    setSavedOpen(true);
+    loadSaved();
+  };
+
+  const handleDeleteSaved = async (id: string) => {
+    await fetch(`/api/embeds/${id}`, { method: "DELETE" });
+    setSavedEmbeds((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const handleLoadSaved = (item: SavedEmbedItem) => {
+    useBuilderStore.getState().setMode(item.mode as "classic" | "components_v2");
+    setTimeout(() => {
+      importFromJson(JSON.stringify(item.payload));
+      router.replace(`?id=${item.id}`);
+      setSavedOpen(false);
+    }, 50);
+  };
 
   const persistWidth = useCallback((w: number) => {
     localStorage.setItem(STORAGE_KEY, String(w));
@@ -114,6 +204,23 @@ export default function Home() {
               </button>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={handleShare}
+                disabled={shareLoading}
+                className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
+              >
+                {shareCopied ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
+                {shareCopied ? "Copied!" : "Share"}
+              </button>
+              {session?.user && (
+                <button
+                  onClick={handleOpenSaved}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors"
+                >
+                  <Bookmark className="size-3.5" />
+                  Saved
+                </button>
+              )}
               <JsonEditor />
               <Dialog>
                 <DialogTrigger
@@ -186,6 +293,51 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {savedOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSavedOpen(false)}>
+          <div
+            className="w-full max-w-2xl max-h-[70vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-[#e4e4e7]">Saved Embeds</h2>
+              <button onClick={() => setSavedOpen(false)} className="text-[#71717a] hover:text-white transition-colors text-lg leading-none">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {savedLoading ? (
+                <p className="text-sm text-[#71717a] text-center py-8">Loading...</p>
+              ) : savedEmbeds.length === 0 ? (
+                <p className="text-sm text-[#71717a] text-center py-8">No saved embeds yet</p>
+              ) : (
+                savedEmbeds.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 rounded-md bg-white/[0.03] border border-white/[0.06] p-3 hover:bg-white/[0.05] transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-[#e4e4e7] truncate">{item.title || "Untitled"}</span>
+                        <span className="text-[10px] rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[#71717a] font-medium">{item.mode === "classic" ? "Classic" : "V2"}</span>
+                      </div>
+                      <span className="text-[10px] text-[#52525b]">{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <button
+                      onClick={() => handleLoadSaved(item)}
+                      className="inline-flex items-center gap-1 rounded-md h-7 px-2.5 text-[11px] font-medium bg-[#5865f2] text-white hover:bg-[#4752c4] transition-colors"
+                    >
+                      <ExternalLink className="size-3" />
+                      Load
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSaved(item.id)}
+                      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="fixed bottom-2 right-3 text-xs text-[#71717a]">
         Built with{" "}
         <img
@@ -205,5 +357,13 @@ export default function Home() {
         </a>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
