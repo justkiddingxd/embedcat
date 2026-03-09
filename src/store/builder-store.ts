@@ -129,6 +129,7 @@ interface BuilderState {
 
   setJsonEditorOpen: (open: boolean) => void;
   importFromJson: (json: string) => boolean;
+  loadFromPayload: (mode: BuilderMode, payload: Record<string, unknown>) => void;
   reset: () => void;
 }
 
@@ -329,6 +330,12 @@ export const useBuilderStore = create<BuilderState>()(
     } catch {
       return false;
     }
+  },
+
+  loadFromPayload: (mode, payload) => {
+    set({ mode });
+    const json = JSON.stringify(payload);
+    get().importFromJson(json);
   },
 
   reset: () =>

@@ -54,3 +54,33 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+
+  if (!userId) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const embed = await prisma.savedEmbed.findUnique({ where: { id } });
+  if (!embed) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (embed.userId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = (await req.json()) as { title?: string };
+  const updated = await prisma.savedEmbed.update({
+    where: { id },
+    data: { title: body.title ?? embed.title },
+    select: { id: true, title: true },
+  });
+
+  return NextResponse.json(updated);
+}

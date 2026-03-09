@@ -18,7 +18,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink } from "lucide-react";
+import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink, Bookmark, Pencil, ChevronDown } from "lucide-react";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -46,7 +46,7 @@ interface SavedEmbedItem {
 }
 
 function HomeContent() {
-  const { mode, setMode, reset, content, embeds, components, webhook, importFromJson } = useBuilderStore();
+  const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -59,6 +59,9 @@ function HomeContent() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [savedEmbeds, setSavedEmbeds] = useState<SavedEmbedItem[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -71,29 +74,29 @@ function HomeContent() {
     if (!id) return;
     loadedRef.current = true;
     fetch(`/api/embeds/${id}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((data: SavedEmbedItem) => {
-        if (data.mode) {
-          useBuilderStore.getState().setMode(data.mode as "classic" | "components_v2");
-          setTimeout(() => {
-            importFromJson(JSON.stringify(data.payload));
-          }, 50);
+        if (data.mode && data.payload) {
+          loadFromPayload(data.mode as "classic" | "components_v2", data.payload);
         }
       })
       .catch(() => { void 0; });
-  }, [searchParams, importFromJson]);
+  }, [searchParams, loadFromPayload]);
 
-  const handleShare = async () => {
+  const buildCurrentPayload = useCallback(() => {
+    return mode === "classic"
+      ? buildClassicPayload(content, embeds, webhook)
+      : buildComponentsV2Payload(components, webhook);
+  }, [mode, content, embeds, components, webhook]);
+
+  const handleCopyLink = async () => {
     setShareLoading(true);
     try {
-      const payload =
-        mode === "classic"
-          ? buildClassicPayload(content, embeds, webhook)
-          : buildComponentsV2Payload(components, webhook);
+      const payload = buildCurrentPayload();
       const res = await fetch("/api/embeds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, payload, title: (embeds[0]?.title || "Untitled") }),
+        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled" }),
       });
       const data = (await res.json()) as { id: string };
       const url = `${window.location.origin}?id=${data.id}`;
@@ -103,6 +106,23 @@ function HomeContent() {
       setTimeout(() => setShareCopied(false), 2000);
     } catch { void 0; }
     setShareLoading(false);
+  };
+
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const handleSaveToProfile = async () => {
+    if (!session?.user) return;
+    setSaveStatus("saving");
+    try {
+      const payload = buildCurrentPayload();
+      await fetch("/api/embeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled" }),
+      });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch { void 0; setSaveStatus("idle"); }
   };
 
   const loadSaved = async () => {
@@ -126,13 +146,20 @@ function HomeContent() {
     setSavedEmbeds((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const handleRenameSaved = async (id: string, title: string) => {
+    await fetch(`/api/embeds/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    setSavedEmbeds((prev) => prev.map((e) => e.id === id ? { ...e, title } : e));
+    setEditingId(null);
+  };
+
   const handleLoadSaved = (item: SavedEmbedItem) => {
-    useBuilderStore.getState().setMode(item.mode as "classic" | "components_v2");
-    setTimeout(() => {
-      importFromJson(JSON.stringify(item.payload));
-      router.replace(`?id=${item.id}`);
-      setSavedOpen(false);
-    }, 50);
+    loadFromPayload(item.mode as "classic" | "components_v2", item.payload);
+    router.replace(`?id=${item.id}`);
+    setSavedOpen(false);
   };
 
   const persistWidth = useCallback((w: number) => {
@@ -204,13 +231,23 @@ function HomeContent() {
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={handleShare}
+                onClick={handleCopyLink}
                 disabled={shareLoading}
                 className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
               >
                 {shareCopied ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
-                {shareCopied ? "Copied!" : "Share"}
+                {shareCopied ? "Copied!" : "Link"}
               </button>
+              {session?.user && (
+                <button
+                  onClick={handleSaveToProfile}
+                  disabled={saveStatus === "saving"}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
+                >
+                  {saveStatus === "saved" ? <Check className="size-3.5 text-emerald-400" /> : <Bookmark className="size-3.5" />}
+                  {saveStatus === "saved" ? "Saved!" : "Save"}
+                </button>
+              )}
               <JsonEditor />
               <Dialog>
                 <DialogTrigger
@@ -286,41 +323,74 @@ function HomeContent() {
       {savedOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSavedOpen(false)}>
           <div
-            className="w-full max-w-2xl max-h-[70vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
+            className="w-full max-w-2xl max-h-[80vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-[#e4e4e7]">Saved Embeds</h2>
               <button onClick={() => setSavedOpen(false)} className="text-[#71717a] hover:text-white transition-colors text-lg leading-none">&times;</button>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
               {savedLoading ? (
                 <p className="text-sm text-[#71717a] text-center py-8">Loading...</p>
               ) : savedEmbeds.length === 0 ? (
                 <p className="text-sm text-[#71717a] text-center py-8">No saved embeds yet</p>
               ) : (
                 savedEmbeds.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 rounded-md bg-white/[0.03] border border-white/[0.06] p-3 hover:bg-white/[0.05] transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[#e4e4e7] truncate">{item.title || "Untitled"}</span>
-                        <span className="text-[10px] rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[#71717a] font-medium">{item.mode === "classic" ? "Classic" : "V2"}</span>
+                  <div key={item.id} className="rounded-md bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                    <div className="flex items-center gap-2 p-2.5">
+                      <button
+                        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                        className="text-[#52525b] hover:text-[#a1a1aa] transition-colors shrink-0"
+                      >
+                        <ChevronDown className={`size-3.5 transition-transform ${expandedId === item.id ? "rotate-180" : ""}`} />
+                      </button>
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}>
+                        {editingId === item.id ? (
+                          <input
+                            autoFocus
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onBlur={() => handleRenameSaved(item.id, editTitle)}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleRenameSaved(item.id, editTitle); if (e.key === "Escape") setEditingId(null); }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs font-semibold text-[#e4e4e7] bg-transparent border-b border-[#5865f2] outline-none w-full"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-[#e4e4e7] truncate">{item.title || "Untitled"}</span>
+                            <span className="text-[10px] rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[#71717a] font-medium shrink-0">{item.mode === "classic" ? "Classic" : "V2"}</span>
+                          </div>
+                        )}
+                        <span className="text-[10px] text-[#52525b]">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <span className="text-[10px] text-[#52525b]">{new Date(item.createdAt).toLocaleDateString()}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingId(item.id); setEditTitle(item.title || ""); }}
+                        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#52525b] hover:text-[#a1a1aa] hover:bg-white/[0.04] transition-colors shrink-0"
+                      >
+                        <Pencil className="size-3" />
+                      </button>
+                      <button
+                        onClick={() => handleLoadSaved(item)}
+                        className="inline-flex items-center gap-1 rounded-md h-7 px-2.5 text-[11px] font-medium bg-[#5865f2] text-white hover:bg-[#4752c4] transition-colors shrink-0"
+                      >
+                        <ExternalLink className="size-3" />
+                        Load
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSaved(item.id)}
+                        className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#52525b] hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleLoadSaved(item)}
-                      className="inline-flex items-center gap-1 rounded-md h-7 px-2.5 text-[11px] font-medium bg-[#5865f2] text-white hover:bg-[#4752c4] transition-colors"
-                    >
-                      <ExternalLink className="size-3" />
-                      Load
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSaved(item.id)}
-                      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                    {expandedId === item.id && (
+                      <div className="border-t border-white/[0.06] bg-[#313338] p-3 max-h-[300px] overflow-y-auto">
+                        <pre className="text-[10px] font-mono text-[#a1a1aa] whitespace-pre-wrap break-all">
+                          {JSON.stringify(item.payload, null, 2)}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
