@@ -16,15 +16,18 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmbedEditor } from "./EmbedEditor";
+import { useDragReorder } from "@/hooks/use-drag-reorder";
 
 function EmbedCard({
   embed,
   index,
   total,
+  dragProps,
 }: {
   embed: { id: string; title?: string; color?: number };
   index: number;
   total: number;
+  dragProps: Record<string, unknown>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { removeEmbed, duplicateEmbed, moveEmbed } = useBuilderStore();
@@ -35,7 +38,7 @@ function EmbedCard({
   const titlePreview = embed.title?.slice(0, 40) || "Untitled embed";
 
   return (
-    <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden">
+    <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
       <div
         className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer select-none"
         onClick={() => setCollapsed(!collapsed)}
@@ -44,7 +47,7 @@ function EmbedCard({
           className="w-0.5 h-5 rounded-full shrink-0"
           style={{ backgroundColor: colorHex }}
         />
-        <GripVertical className="size-3 text-[#3f3f46] shrink-0" />
+        <GripVertical className="size-3 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing" />
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <Badge
             variant="secondary"
@@ -120,7 +123,8 @@ function EmbedCard({
 }
 
 export function ClassicBuilder() {
-  const { content, setContent, embeds, addEmbed } = useBuilderStore();
+  const { content, setContent, embeds, addEmbed, reorderEmbeds } = useBuilderStore();
+  const getDragProps = useDragReorder(reorderEmbeds);
 
   return (
     <div className="space-y-1.5">
@@ -167,6 +171,7 @@ export function ClassicBuilder() {
               embed={embed}
               index={i}
               total={embeds.length}
+              dragProps={getDragProps(i)}
             />
           ))}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ColorPicker } from "./ColorPicker";
 import {
   ArrowUp,
@@ -18,6 +18,7 @@ import {
   Type,
 } from "lucide-react";
 import { useBuilderStore } from "@/store/builder-store";
+import { useDragReorder } from "@/hooks/use-drag-reorder";
 import {
   createContainer,
   createTextDisplay,
@@ -129,7 +130,7 @@ function ComponentCardHeader({
       className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
       onClick={onToggle}
     >
-      <GripVertical className="size-3.5 text-[#3f3f46] shrink-0" />
+      <GripVertical className="size-3.5 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing" />
       <Badge
         variant="secondary"
         className="shrink-0 text-[10px] px-1.5 h-[18px] gap-1 border-0"
@@ -452,10 +453,12 @@ function TopLevelCard({
   component,
   index,
   total,
+  dragProps,
 }: {
   component: TopLevelComponent;
   index: number;
   total: number;
+  dragProps: Record<string, unknown>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { removeComponent, moveComponent, updateComponent } =
@@ -477,7 +480,7 @@ function TopLevelCard({
   };
 
   return (
-    <div className="rounded-lg bg-[#111113] border border-white/[0.06] overflow-hidden">
+    <div className="rounded-lg bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
       {accentColor && (
         <div
           className="h-1 w-full"
@@ -591,6 +594,8 @@ function AddTopLevelButton() {
 
 export function ComponentsV2Editor() {
   const components = useBuilderStore((s) => s.components);
+  const reorderComponents = useBuilderStore((s) => s.reorderComponents);
+  const getDragProps = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
 
   return (
     <div className="space-y-2">
@@ -610,6 +615,7 @@ export function ComponentsV2Editor() {
             component={comp}
             index={i}
             total={components.length}
+            dragProps={getDragProps(i)}
           />
         ))}
       </div>

@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  GripVertical,
   ImageIcon,
   LayoutGrid,
   MessageSquare,
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ColorPicker } from "./ColorPicker";
 import { DateTimePicker } from "./DateTimePicker";
+import { useDragReorder } from "@/hooks/use-drag-reorder";
 
 function CharCount({ current, max }: { current: number; max: number }) {
   const ratio = current / max;
@@ -72,20 +74,25 @@ function FieldEditor({
   field,
   index,
   total,
+  dragProps,
 }: {
   embedId: string;
   field: EmbedField;
   index: number;
   total: number;
+  dragProps: Record<string, unknown>;
 }) {
   const { updateField, removeField, moveField } = useBuilderStore();
 
   return (
-    <div className="rounded bg-white/[0.02] border border-white/[0.04] p-1.5 space-y-1">
+    <div className="rounded bg-white/[0.02] border border-white/[0.04] p-1.5 space-y-1" {...dragProps}>
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium text-muted-foreground">
-          Field {index + 1}
-        </span>
+        <div className="flex items-center gap-1">
+          <GripVertical className="size-3 text-[#3f3f46] cursor-grab active:cursor-grabbing" />
+          <span className="text-[10px] font-medium text-muted-foreground">
+            Field {index + 1}
+          </span>
+        </div>
         <div className="flex items-center gap-0">
           <Button
             variant="ghost"
@@ -184,7 +191,12 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
     duplicateEmbed,
     moveEmbed,
     addField,
+    reorderFields,
   } = useBuilderStore();
+
+  const getFieldDragProps = useDragReorder(
+    useCallback((from: number, to: number) => reorderFields(embed.id, from, to), [embed.id, reorderFields])
+  );
 
   const totalEmbeds = embeds.length;
   const colorHex = `#${(embed.color ?? 0x5865f2).toString(16).padStart(6, "0")}`;
@@ -390,6 +402,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                   field={field}
                   index={i}
                   total={embed.fields.length}
+                  dragProps={getFieldDragProps(i)}
                 />
               ))}
               {embed.fields.length < LIMITS.EMBED_FIELDS && (
