@@ -31,7 +31,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
   return (
     <div className="grid grid-cols-[1fr_1fr] gap-2">
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
+        <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
           Style
         </label>
         <Select
@@ -73,7 +73,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
+        <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
           Label
         </label>
         <Input
@@ -85,7 +85,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
+        <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
           {isLink ? "URL" : "Custom ID"}
         </label>
         <Input

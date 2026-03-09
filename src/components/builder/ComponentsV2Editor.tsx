@@ -387,7 +387,7 @@ function ContainerEditor({
     <div className="space-y-2">
       <div className="flex items-center gap-3">
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
+          <Label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
             Accent Color
           </Label>
           <ColorPicker
@@ -595,7 +595,7 @@ export function ComponentsV2Editor() {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
-        <Label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#52525b]">
+        <Label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#a1a1aa]">
           Components
         </Label>
         <span className="text-[11px] tabular-nums font-mono text-[#3f3f46]">

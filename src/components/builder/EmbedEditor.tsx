@@ -57,12 +57,12 @@ function SectionHeader({
   label: string;
 }) {
   return (
-    <div className="group flex items-center gap-1.5 py-1 px-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none">
-      <span className="text-muted-foreground/60">{icon}</span>
-      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] flex-1">
+    <div className="group flex items-center gap-1.5 py-1.5 px-2 bg-white/[0.03] hover:bg-white/[0.05] transition-colors cursor-pointer select-none">
+      <span className="text-[#71717a]">{icon}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] flex-1 text-[#a1a1aa]">
         {label}
       </span>
-      <ChevronDown className="size-3 text-muted-foreground/60 transition-transform duration-200 group-aria-expanded:rotate-180" />
+      <ChevronDown className="size-3 text-[#52525b] transition-transform duration-200 group-aria-expanded:rotate-180" />
     </div>
   );
 }
@@ -306,13 +306,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <div className="px-2 py-1.5 space-y-1">
-          <div className="flex items-center gap-1.5">
-            <Type className="size-3 text-muted-foreground/60" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 py-1.5 px-2 bg-white/[0.03]">
+            <Type className="size-3 text-[#71717a]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
               Body
             </span>
           </div>
+          <div className="px-2 pb-1.5 space-y-1">
 
           <div className="space-y-0.5">
             <div className="flex items-center justify-between">
@@ -368,6 +369,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
               color={embed.color ?? 0x5865f2}
               onChange={(color) => updateEmbed(embed.id, { color })}
             />
+          </div>
           </div>
         </div>
 

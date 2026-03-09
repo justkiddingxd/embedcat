@@ -126,7 +126,7 @@ export function ClassicBuilder() {
     <div className="space-y-1.5">
       <div className="rounded-md bg-[#111113] border border-white/[0.06] p-2 space-y-1">
         <div className="flex items-center justify-between">
-          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52525b]">
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
             Content
           </Label>
           <span
@@ -152,7 +152,7 @@ export function ClassicBuilder() {
 
       <div className="space-y-1">
         <div className="flex items-center justify-between px-0.5">
-          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52525b]">
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
             Embeds
           </Label>
           <span className="text-[10px] tabular-nums font-mono text-[#3f3f46]">

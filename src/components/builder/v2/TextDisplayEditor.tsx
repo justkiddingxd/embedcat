@@ -14,7 +14,7 @@ export function TextDisplayEditor({
 }: TextDisplayEditorProps) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
+      <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
         Markdown Content
       </label>
       <Textarea
