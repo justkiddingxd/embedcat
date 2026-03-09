@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
+import { ImageIcon } from "lucide-react";
 import { useBuilderStore } from "@/store/builder-store";
 import { useMentionResolver } from "@/hooks/use-mention-resolver";
 import type {
@@ -286,6 +287,7 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
               <img
                 src={embed.author.icon_url}
                 alt=""
+                referrerPolicy="no-referrer"
                 className="h-6 w-6 rounded-full object-cover"
               />
             )}
@@ -354,6 +356,7 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
             <img
               src={embed.image.url}
               alt=""
+              referrerPolicy="no-referrer"
               className="max-w-[400px] rounded object-cover"
             />
           </div>
@@ -365,6 +368,7 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
               <img
                 src={embed.footer.icon_url}
                 alt=""
+                referrerPolicy="no-referrer"
                 className="h-5 w-5 rounded-full object-cover"
               />
             )}
@@ -380,6 +384,7 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
           <img
             src={embed.thumbnail.url}
             alt=""
+            referrerPolicy="no-referrer"
             className="h-[80px] w-[80px] rounded object-cover"
           />
         </div>
@@ -473,7 +478,50 @@ function RenderThumbnail({ component }: { component: ThumbnailComponent }) {
     <img
       src={component.media.url}
       alt={component.description ?? ""}
+      referrerPolicy="no-referrer"
       className="h-[80px] w-[80px] rounded object-cover"
+    />
+  );
+}
+
+function isVideoUrl(url: string): boolean {
+  const path = url.split("?")[0].toLowerCase();
+  return path.endsWith(".mp4") || path.endsWith(".webm") || path.endsWith(".mov");
+}
+
+function MediaItem({ item }: { item: MediaGalleryItem }) {
+  const [errored, setErrored] = useState(false);
+  const url = item.media.url;
+
+  if (errored) {
+    return (
+      <div className="flex items-center justify-center w-full h-[120px] rounded bg-[#2b2d31] text-[#52525b]">
+        <ImageIcon className="size-8" />
+      </div>
+    );
+  }
+
+  if (isVideoUrl(url)) {
+    return (
+      <video
+        src={url}
+        className="w-full rounded object-cover max-h-[300px]"
+        autoPlay
+        loop
+        muted
+        playsInline
+        onError={() => setErrored(true)}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={item.description ?? ""}
+      referrerPolicy="no-referrer"
+      className="w-full rounded object-cover max-h-[300px]"
+      onError={() => setErrored(true)}
     />
   );
 }
@@ -502,11 +550,7 @@ function RenderMediaGallery({ component }: { component: MediaGalleryComponent })
                 : ""
           }
         >
-          <img
-            src={item.media.url}
-            alt={item.description ?? ""}
-            className="w-full rounded object-cover max-h-[300px]"
-          />
+          <MediaItem item={item} />
         </div>
       ))}
     </div>
