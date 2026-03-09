@@ -168,7 +168,7 @@ function HomeContent() {
       const res = await fetch("/api/embeds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled" }),
+        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: false }),
       });
       const data = (await res.json()) as { id: string };
       const url = `${window.location.origin}?id=${data.id}`;
@@ -190,7 +190,7 @@ function HomeContent() {
       await fetch("/api/embeds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled" }),
+        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: true }),
       });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
@@ -415,7 +415,7 @@ function HomeContent() {
                 <p className="text-sm text-[#71717a] text-center py-8">No saved embeds yet</p>
               ) : (
                 savedEmbeds.map((item) => (
-                  <div key={item.id} className="rounded-md bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                  <div key={item.id} className="rounded-md bg-white/[0.03] border border-white/[0.06]">
                     <div className="flex items-center gap-2 p-2.5">
                       <button
                         onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}

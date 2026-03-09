@@ -8,14 +8,18 @@ export async function POST(req: NextRequest) {
     title?: string;
     mode: string;
     payload: unknown;
+    saveToProfile?: boolean;
   };
 
   if (!body.mode || !body.payload) {
     return NextResponse.json({ error: "Missing mode or payload" }, { status: 400 });
   }
 
-  const session = await getServerSession(authOptions);
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  let userId: string | null = null;
+  if (body.saveToProfile) {
+    const session = await getServerSession(authOptions);
+    userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  }
 
   const saved = await prisma.savedEmbed.create({
     data: {
