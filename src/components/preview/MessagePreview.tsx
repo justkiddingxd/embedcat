@@ -222,10 +222,10 @@ function RenderInline({ nodes }: { nodes: MarkdownNode[] }) {
 function renderMarkdown(text: string): React.ReactNode {
   const lines = text.split("\n");
   return lines.map((line, i) => {
-    if (line.startsWith("# ")) {
+    if (line.startsWith("### ")) {
       return (
-        <div key={i} className="text-xl font-bold text-[#f2f3f5] leading-relaxed">
-          <RenderInline nodes={parseInlineMarkdown(line.slice(2))} />
+        <div key={i} className="text-sm font-bold text-[#f2f3f5] leading-relaxed">
+          <RenderInline nodes={parseInlineMarkdown(line.slice(4))} />
         </div>
       );
     }
@@ -233,6 +233,13 @@ function renderMarkdown(text: string): React.ReactNode {
       return (
         <div key={i} className="text-base font-bold text-[#f2f3f5] leading-relaxed">
           <RenderInline nodes={parseInlineMarkdown(line.slice(3))} />
+        </div>
+      );
+    }
+    if (line.startsWith("# ")) {
+      return (
+        <div key={i} className="text-xl font-bold text-[#f2f3f5] leading-relaxed">
+          <RenderInline nodes={parseInlineMarkdown(line.slice(2))} />
         </div>
       );
     }
@@ -263,7 +270,7 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
     embed.footer?.text ||
     embed.image?.url ||
     embed.thumbnail?.url ||
-    embed.fields.length > 0;
+    (embed.fields?.length ?? 0) > 0;
 
   if (!hasContent) return null;
 
@@ -324,9 +331,9 @@ function EmbedCard({ embed }: { embed: DiscordEmbed }) {
           </div>
         )}
 
-        {embed.fields.length > 0 && (
+        {(embed.fields?.length ?? 0) > 0 && (
           <div className="mb-2 grid grid-cols-3 gap-2">
-            {embed.fields.map((field) => (
+            {(embed.fields ?? []).map((field) => (
               <div
                 key={field.id}
                 className={field.inline ? "col-span-1" : "col-span-3"}
@@ -393,29 +400,50 @@ function ButtonPreview({ button }: { button: ButtonComponent }) {
     [ButtonStyle.Link]: "bg-[#4e5058] text-white hover:bg-[#6d6f78]",
   };
 
+  const linkIcon = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="ml-0.5 opacity-70"
+    >
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  );
+
+  const content = (
+    <>
+      {button.emoji && <span>{button.emoji.name}</span>}
+      {button.label && <span>{button.label}</span>}
+      {button.style === ButtonStyle.Link && linkIcon}
+    </>
+  );
+
+  if (button.style === ButtonStyle.Link && button.url) {
+    return (
+      <a
+        href={button.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${baseClasses} ${styleMap[ButtonStyle.Link]} no-underline`}
+      >
+        {content}
+      </a>
+    );
+  }
+
   return (
     <div
       className={`${baseClasses} ${styleMap[button.style] ?? styleMap[ButtonStyle.Secondary]}`}
     >
-      {button.emoji && <span>{button.emoji.name}</span>}
-      {button.label && <span>{button.label}</span>}
-      {button.style === ButtonStyle.Link && (
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="ml-0.5 opacity-70"
-        >
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          <polyline points="15 3 21 3 21 9" />
-          <line x1="10" y1="14" x2="21" y2="3" />
-        </svg>
-      )}
+      {content}
     </div>
   );
 }
