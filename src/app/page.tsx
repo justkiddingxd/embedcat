@@ -78,7 +78,7 @@ export default function Home() {
       <Header />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-1.5">
+          <div className="flex h-9 items-center justify-between border-b border-white/[0.06] px-3">
             <div className="flex items-center gap-0.5 rounded-full bg-[#111113] p-0.5 ring-1 ring-white/[0.06]">
               <button
                 onClick={() => setMode("classic")}
@@ -138,7 +138,7 @@ export default function Home() {
           className="flex shrink-0 flex-col bg-[#09090b]"
           style={{ width: previewWidth }}
         >
-          <div className="flex items-center border-b border-white/[0.06] px-3 py-1.5">
+          <div className="flex h-9 items-center border-b border-white/[0.06] px-3">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#52525b]">
               Preview
             </span>

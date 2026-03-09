@@ -139,5 +139,19 @@
     position: relative;
     z-index: 1;
   }
-
+  button,
+  a,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="option"],
+  [type="submit"],
+  [type="reset"],
+  label[for] {
+    cursor: pointer;
+  }
 }
