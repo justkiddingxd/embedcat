@@ -30,6 +30,31 @@ export function createEmptyEmbed(): DiscordEmbed {
   };
 }
 
+function createWelcomeEmbed(): DiscordEmbed {
+  return {
+    id: nanoid(),
+    title: "🐱 Добро пожаловать в embed.cat!",
+    description: "Это твой первый эмбед! Начни редактировать его с помощью панели слева или попроси **AI-помощника** создать что-нибудь.\n\n**Что можно делать:**\n• Менять текст, цвет, картинки\n• Добавлять поля, кнопки, автора\n• Использовать **Components V2**\n• Отправлять эмбеды через вебхук",
+    color: 0x5865f2,
+    footer: { text: "embed.cat — простой конструктор эмбедов для Discord" },
+    thumbnail: { url: "https://rin.ms/embedcat.png" },
+    fields: [
+      {
+        id: nanoid(),
+        name: "💡 Совет",
+        value: "Напиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*",
+        inline: true,
+      },
+      {
+        id: nanoid(),
+        name: "🔗 Ссылки",
+        value: "[Документация](https://docs.embed.cat) • [Discord](https://discord.gg/kUkuwdSNVd)",
+        inline: true,
+      },
+    ],
+  };
+}
+
 export function createEmptyField(): EmbedField {
   return { id: nanoid(), name: "", value: "", inline: false };
 }
@@ -97,6 +122,56 @@ export function createContainer(): ContainerComponent {
   };
 }
 
+function createWelcomeContainer(): ContainerComponent {
+  return {
+    id: nanoid(),
+    type: ComponentType.Container,
+    accent_color: 0x5865f2,
+    components: [
+      { id: nanoid(), type: ComponentType.TextDisplay, content: "# 🐱 Добро пожаловать в embed.cat!" },
+      { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
+      { id: nanoid(), type: ComponentType.TextDisplay, content: "Это **Components V2** — новый способ оформления сообщений в Discord. Здесь можно использовать текст, секции, разделители, галереи и кнопки.\n\nНачни редактировать с панели слева или попроси **AI-помощника** создать что-нибудь." },
+      { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
+      {
+        id: nanoid(),
+        type: ComponentType.Section,
+        components: [
+          { id: nanoid(), type: ComponentType.TextDisplay, content: "### 💡 Совет\nНапиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*" },
+        ],
+        accessory: { id: nanoid(), type: ComponentType.Thumbnail, media: { url: "https://rin.ms/embedcat.png" } },
+      },
+      { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
+      { id: nanoid(), type: ComponentType.TextDisplay, content: "### ✨ Что можно делать\n• Текст с **маркдауном** и заголовками\n• Секции с картинками и кнопками\n• Галереи изображений\n• Разделители и кнопки-ссылки" },
+      { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
+      {
+        id: nanoid(),
+        type: ComponentType.ActionRow,
+        components: [
+          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: "📖 Документация", url: "https://embed.cat" },
+          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: "💬 Discord", url: "https://discord.gg/embedcat" },
+        ],
+      },
+    ],
+  };
+}
+
+type Snapshot = {
+  content: string;
+  embeds: DiscordEmbed[];
+  components: TopLevelComponent[];
+};
+
+const MAX_HISTORY = 100;
+const undoStack: Snapshot[] = [];
+const redoStack: Snapshot[] = [];
+let skipSnapshot = false;
+
+function takeSnapshot(state: Snapshot) {
+  undoStack.push(structuredClone(state));
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack.length = 0;
+}
+
 interface BuilderState {
   mode: BuilderMode;
   webhook: WebhookConfig;
@@ -131,21 +206,36 @@ interface BuilderState {
   importFromJson: (json: string) => boolean;
   loadFromPayload: (mode: BuilderMode, payload: Record<string, unknown>) => void;
   reset: () => void;
+
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
 export const useBuilderStore = create<BuilderState>()(
   persist(
-    (set, get) => ({
+    (rawSet, get) => {
+  const snap = () => {
+    if (skipSnapshot) return;
+    const s = get();
+    takeSnapshot({ content: s.content, embeds: s.embeds, components: s.components });
+  };
+  const set: typeof rawSet = (partial, replace?) => {
+    snap();
+    rawSet(partial as Parameters<typeof rawSet>[0], replace as undefined);
+  };
+  return {
   mode: "classic",
   webhook: { url: "" },
   content: "",
-  embeds: [createEmptyEmbed()],
-  components: [createContainer()],
+  embeds: [createWelcomeEmbed()],
+  components: [createWelcomeContainer()],
   jsonEditorOpen: false,
 
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) => rawSet({ mode }),
   setWebhook: (webhook) =>
-    set((s) => ({ webhook: { ...s.webhook, ...webhook } })),
+    rawSet((s) => ({ webhook: { ...s.webhook, ...webhook } })),
 
   setContent: (content) => set({ content }),
 
@@ -290,14 +380,20 @@ export const useBuilderStore = create<BuilderState>()(
       const state = get();
 
       if (state.mode === "classic") {
-        if (data.content !== undefined) set({ content: data.content });
+        if (data.content !== undefined) set({ content: data.content || "" });
         if (data.embeds) {
-          const embeds = data.embeds.map((e: DiscordEmbed) => ({
+          const embeds = data.embeds.map((e: Record<string, unknown>) => ({
             ...e,
-            id: e.id || nanoid(),
-            fields: (e.fields || []).map((f: EmbedField) => ({
+            id: (e.id as string) || nanoid(),
+            color: typeof e.color === "number" ? e.color : undefined,
+            title: (e.title as string) || "",
+            description: (e.description as string) || "",
+            url: (e.url as string) || "",
+            fields: (Array.isArray(e.fields) ? e.fields : []).map((f: Record<string, unknown>) => ({
               ...f,
-              id: f.id || nanoid(),
+              id: (f.id as string) || nanoid(),
+              name: (f.name as string) || "",
+              value: (f.value as string) || "",
             })),
           }));
           set({ embeds });
@@ -333,7 +429,7 @@ export const useBuilderStore = create<BuilderState>()(
   },
 
   loadFromPayload: (mode, payload) => {
-    set({ mode });
+    rawSet({ mode });
     const json = JSON.stringify(payload);
     get().importFromJson(json);
   },
@@ -344,7 +440,31 @@ export const useBuilderStore = create<BuilderState>()(
         ? { content: "", embeds: [createEmptyEmbed()] }
         : { components: [createContainer()] }
     ),
-    }),
+
+  undo: () => {
+    const snapshot = undoStack.pop();
+    if (!snapshot) return;
+    const s = get();
+    redoStack.push(structuredClone({ content: s.content, embeds: s.embeds, components: s.components }));
+    skipSnapshot = true;
+    rawSet(snapshot);
+    skipSnapshot = false;
+  },
+
+  redo: () => {
+    const snapshot = redoStack.pop();
+    if (!snapshot) return;
+    const s = get();
+    undoStack.push(structuredClone({ content: s.content, embeds: s.embeds, components: s.components }));
+    skipSnapshot = true;
+    rawSet(snapshot);
+    skipSnapshot = false;
+  },
+
+  canUndo: () => undoStack.length > 0,
+  canRedo: () => redoStack.length > 0,
+  };
+    },
     {
       name: "embedcat-builder",
       partialize: (state) => ({
