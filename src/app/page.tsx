@@ -116,6 +116,47 @@ function SavedEmbedPreview({ mode, payload }: { mode: string; payload: Record<st
   );
 }
 
+function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "classic" | "components_v2") => void }) {
+  const classicRef = useRef<HTMLButtonElement>(null);
+  const componentsRef = useRef<HTMLButtonElement>(null);
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const el = mode === "classic" ? classicRef.current : componentsRef.current;
+    if (!el) return;
+    setPill({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [mode]);
+
+  return (
+    <div className="relative flex items-center gap-0.5 rounded-full bg-[#111113] p-0.5 ring-1 ring-white/[0.06]">
+      <div
+        className="absolute top-0.5 h-[calc(100%-4px)] rounded-full bg-[#5865f2] shadow-sm shadow-[#5865f2]/25 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{ left: pill.left, width: pill.width }}
+      />
+      <button
+        ref={classicRef}
+        onClick={() => onModeChange("classic")}
+        className={`relative z-[1] flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ${
+          mode === "classic" ? "text-white" : "text-[#71717a] hover:text-[#a1a1aa]"
+        }`}
+      >
+        <Layers className="size-3" />
+        Classic
+      </button>
+      <button
+        ref={componentsRef}
+        onClick={() => onModeChange("components_v2")}
+        className={`relative z-[1] flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ${
+          mode === "components_v2" ? "text-white" : "text-[#71717a] hover:text-[#a1a1aa]"
+        }`}
+      >
+        <Box className="size-3" />
+        Components
+      </button>
+    </div>
+  );
+}
+
 function HomeContent() {
   const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
   const { data: session } = useSession();
@@ -298,33 +339,7 @@ function HomeContent() {
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex h-9 items-center justify-between border-b border-white/[0.06] px-3">
-            <div className="relative flex items-center gap-0.5 rounded-full bg-[#111113] p-0.5 ring-1 ring-white/[0.06]">
-              <div
-                className="absolute top-0.5 h-[calc(100%-4px)] rounded-full bg-[#5865f2] shadow-sm shadow-[#5865f2]/25 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-                style={{
-                  left: mode === "classic" ? "2px" : "calc(50% + 0px)",
-                  width: mode === "classic" ? "calc(50% - 2px)" : "calc(50% - 2px)",
-                }}
-              />
-              <button
-                onClick={() => setMode("classic")}
-                className={`relative z-[1] flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ${
-                  mode === "classic" ? "text-white" : "text-[#71717a] hover:text-[#a1a1aa]"
-                }`}
-              >
-                <Layers className="size-3" />
-                Classic
-              </button>
-              <button
-                onClick={() => setMode("components_v2")}
-                className={`relative z-[1] flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ${
-                  mode === "components_v2" ? "text-white" : "text-[#71717a] hover:text-[#a1a1aa]"
-                }`}
-              >
-                <Box className="size-3" />
-                Components
-              </button>
-            </div>
+            <ModeToggle mode={mode} onModeChange={setMode} />
             <div className="flex items-center gap-1">
               <button
                 onClick={handleCopyLink}
