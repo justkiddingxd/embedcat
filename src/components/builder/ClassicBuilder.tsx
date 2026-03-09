@@ -7,7 +7,6 @@ import {
   Copy,
   GripVertical,
   Plus,
-  Trash2,
 } from "lucide-react";
 import { useBuilderStore } from "@/store/builder-store";
 import { LIMITS } from "@/types/discord";
@@ -16,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmbedEditor } from "./EmbedEditor";
+import { ConfirmDeleteButton } from "./ConfirmDeleteButton";
 import { useDragReorder } from "@/hooks/use-drag-reorder";
 
 function EmbedCard({
@@ -96,17 +96,7 @@ function EmbedCard({
           >
             <Copy className="size-3" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              removeEmbed(embed.id);
-            }}
-            className="text-[#52525b] hover:text-red-400 transition-colors"
-          >
-            <Trash2 className="size-3" />
-          </Button>
+          <ConfirmDeleteButton onConfirm={() => removeEmbed(embed.id)} />
           <ChevronDown
             className={`size-3 text-[#52525b] ml-0.5 transition-transform duration-200 ${
               collapsed ? "" : "rotate-180"

@@ -14,9 +14,9 @@ import {
   MousePointerClick,
   Plus,
   SplitSquareHorizontal,
-  Trash2,
   Type,
 } from "lucide-react";
+import { ConfirmDeleteButton } from "./ConfirmDeleteButton";
 import { useBuilderStore } from "@/store/builder-store";
 import { useDragReorder } from "@/hooks/use-drag-reorder";
 import {
@@ -167,17 +167,7 @@ function ComponentCardHeader({
         >
           <ArrowDown className="size-3" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="text-[#52525b] hover:text-red-400 transition-colors"
-        >
-          <Trash2 className="size-3" />
-        </Button>
+        <ConfirmDeleteButton onConfirm={onDelete} />
         <ChevronDown
           className={`size-3.5 text-[#52525b] ml-1 transition-transform duration-200 ${
             collapsed ? "" : "rotate-180"
