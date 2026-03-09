@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import { ColorPicker } from "./ColorPicker";
 import {
   ArrowUp,
   ArrowDown,
@@ -40,7 +41,6 @@ import {
   type ActionRowComponent,
   type MediaGalleryComponent,
 } from "@/types/discord";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -98,9 +98,6 @@ function intToHex(color: number): string {
   return `#${color.toString(16).padStart(6, "0")}`;
 }
 
-function hexToInt(hex: string): number {
-  return parseInt(hex.replace("#", ""), 16);
-}
 
 function ComponentCardHeader({
   type,
@@ -188,50 +185,6 @@ function ComponentCardHeader({
   );
 }
 
-function ContainerColorPicker({
-  color,
-  onChange,
-}: {
-  color: number;
-  onChange: (color: number) => void;
-}) {
-  const hexValue = intToHex(color);
-
-  const handleHexInput = useCallback(
-    (value: string) => {
-      const cleaned = value.replace(/[^0-9a-fA-F#]/g, "");
-      const hex = cleaned.startsWith("#") ? cleaned.slice(1) : cleaned;
-      if (hex.length === 6) {
-        const parsed = parseInt(hex, 16);
-        if (!isNaN(parsed)) onChange(parsed);
-      }
-    },
-    [onChange]
-  );
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
-        <input
-          type="color"
-          value={hexValue}
-          onChange={(e) => onChange(hexToInt(e.target.value))}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
-        <div
-          className="w-7 h-7 rounded-md border border-white/[0.08] cursor-pointer"
-          style={{ backgroundColor: hexValue }}
-        />
-      </div>
-      <Input
-        value={hexValue}
-        onChange={(e) => handleHexInput(e.target.value)}
-        className="w-24 h-7 bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] font-mono text-xs"
-        maxLength={7}
-      />
-    </div>
-  );
-}
 
 function ContainerChildCard({
   child,
@@ -437,7 +390,7 @@ function ContainerEditor({
           <Label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
             Accent Color
           </Label>
-          <ContainerColorPicker
+          <ColorPicker
             color={component.accent_color ?? 0x5865f2}
             onChange={(color) =>
               onChange((c) => {

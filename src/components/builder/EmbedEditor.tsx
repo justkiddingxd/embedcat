@@ -28,6 +28,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import { ColorPicker } from "./ColorPicker";
 
 function CharCount({ current, max }: { current: number; max: number }) {
   const ratio = current / max;
@@ -46,53 +47,6 @@ function CharCount({ current, max }: { current: number; max: number }) {
   );
 }
 
-function ColorPicker({
-  color,
-  onChange,
-}: {
-  color: number;
-  onChange: (color: number) => void;
-}) {
-  const hexValue = `#${color.toString(16).padStart(6, "0")}`;
-
-  const handleHexInput = useCallback(
-    (value: string) => {
-      const cleaned = value.replace(/[^0-9a-fA-F#]/g, "");
-      const hex = cleaned.startsWith("#") ? cleaned.slice(1) : cleaned;
-      if (hex.length === 6) {
-        const parsed = parseInt(hex, 16);
-        if (!isNaN(parsed)) onChange(parsed);
-      }
-    },
-    [onChange]
-  );
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="relative">
-        <input
-          type="color"
-          value={hexValue}
-          onChange={(e) => {
-            const parsed = parseInt(e.target.value.slice(1), 16);
-            onChange(parsed);
-          }}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
-        <div
-          className="w-6 h-6 rounded border border-border cursor-pointer"
-          style={{ backgroundColor: hexValue }}
-        />
-      </div>
-      <Input
-        value={hexValue}
-        onChange={(e) => handleHexInput(e.target.value)}
-        className="w-24 h-7 font-mono text-xs"
-        maxLength={7}
-      />
-    </div>
-  );
-}
 
 function SectionHeader({
   icon,
