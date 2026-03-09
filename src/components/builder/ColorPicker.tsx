@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Pipette } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,6 +26,32 @@ function hexToInt(hex: string): number {
   return parseInt(hex.replace("#", ""), 16);
 }
 
+function drawGradient(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const hueGradient = ctx.createLinearGradient(0, 0, w, 0);
+  GRADIENT_COLORS.forEach((c, i) => {
+    hueGradient.addColorStop(i / (GRADIENT_COLORS.length - 1), c);
+  });
+  ctx.fillStyle = hueGradient;
+  ctx.fillRect(0, 0, w, h);
+
+  const whiteGradient = ctx.createLinearGradient(0, 0, 0, h / 2);
+  whiteGradient.addColorStop(0, "rgba(255,255,255,0.8)");
+  whiteGradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = whiteGradient;
+  ctx.fillRect(0, 0, w, h / 2);
+
+  const blackGradient = ctx.createLinearGradient(0, h / 2, 0, h);
+  blackGradient.addColorStop(0, "rgba(0,0,0,0)");
+  blackGradient.addColorStop(1, "rgba(0,0,0,0.8)");
+  ctx.fillStyle = blackGradient;
+  ctx.fillRect(0, h / 2, w, h / 2);
+}
+
 interface ColorPickerProps {
   color: number;
   onChange: (color: number) => void;
@@ -34,8 +60,7 @@ interface ColorPickerProps {
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
   const [hexInput, setHexInput] = useState(intToHex(color));
   const [supportsEyeDropper, setSupportsEyeDropper] = useState(false);
-  const gradientRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     setSupportsEyeDropper("EyeDropper" in window);
@@ -45,49 +70,26 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
     setHexInput(intToHex(color));
   }, [color]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
-    const hueGradient = ctx.createLinearGradient(0, 0, w, 0);
-    GRADIENT_COLORS.forEach((c, i) => {
-      hueGradient.addColorStop(i / (GRADIENT_COLORS.length - 1), c);
-    });
-    ctx.fillStyle = hueGradient;
-    ctx.fillRect(0, 0, w, h);
-
-    const whiteGradient = ctx.createLinearGradient(0, 0, 0, h / 2);
-    whiteGradient.addColorStop(0, "rgba(255,255,255,0.8)");
-    whiteGradient.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = whiteGradient;
-    ctx.fillRect(0, 0, w, h / 2);
-
-    const blackGradient = ctx.createLinearGradient(0, h / 2, 0, h);
-    blackGradient.addColorStop(0, "rgba(0,0,0,0)");
-    blackGradient.addColorStop(1, "rgba(0,0,0,0.8)");
-    ctx.fillStyle = blackGradient;
-    ctx.fillRect(0, h / 2, w, h / 2);
+  const canvasRefCallback = useCallback((node: HTMLCanvasElement | null) => {
+    if (node) {
+      setCanvasEl(node);
+      drawGradient(node);
+    }
   }, []);
 
   const pickFromCanvas = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
+      if (!canvasEl) return;
+      const ctx = canvasEl.getContext("2d");
       if (!ctx) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
-      const y = Math.round((e.clientY - rect.top) * (canvas.height / rect.height));
+      const rect = canvasEl.getBoundingClientRect();
+      const x = Math.round((e.clientX - rect.left) * (canvasEl.width / rect.width));
+      const y = Math.round((e.clientY - rect.top) * (canvasEl.height / rect.height));
       const pixel = ctx.getImageData(x, y, 1, 1).data;
       const hex = ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]);
       onChange(hex);
     },
-    [onChange]
+    [onChange, canvasEl]
   );
 
   const handleCanvasDrag = useCallback(
@@ -141,7 +143,7 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
       >
         <div className="p-2 space-y-2">
           <canvas
-            ref={canvasRef}
+            ref={canvasRefCallback}
             width={216}
             height={80}
             className="w-full h-[80px] rounded cursor-crosshair"
@@ -180,7 +182,6 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
               <button
                 onClick={handleEyeDropper}
                 className="flex items-center justify-center w-7 h-7 rounded border border-white/[0.06] bg-[#0a0a0b] text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 transition-colors shrink-0"
-                title="Pick color from screen"
               >
                 <Pipette className="size-3.5" />
               </button>
