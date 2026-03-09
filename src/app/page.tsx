@@ -9,7 +9,17 @@ import MessagePreview from "@/components/preview/MessagePreview";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { JsonEditor } from "@/components/builder/JsonEditor";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Layers, Box } from "lucide-react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { RotateCcw, Layers, Box, AlertTriangle } from "lucide-react";
 
 const STORAGE_KEY = "embedcat-preview-width";
 const MIN_WIDTH = 280;
@@ -105,14 +115,40 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-1">
               <JsonEditor />
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={reset}
-                className="text-[#71717a] hover:text-white transition-colors"
-              >
-                <RotateCcw className="size-3.5" />
-              </Button>
+              <Dialog>
+                <DialogTrigger
+                  className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors"
+                >
+                  <RotateCcw className="size-3.5" />
+                </DialogTrigger>
+                <DialogContent
+                  showCloseButton={false}
+                  className="bg-[#111113] border border-white/[0.08] ring-0 shadow-2xl shadow-black/60 max-w-xs"
+                >
+                  <DialogHeader className="items-center text-center">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10 mb-1">
+                      <AlertTriangle className="size-5 text-red-400" />
+                    </div>
+                    <DialogTitle className="text-[#e4e4e7]">Are you sure?</DialogTitle>
+                    <DialogDescription className="text-[#71717a]">
+                      Your embed will be deleted and all progress will be lost.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="bg-transparent border-white/[0.06] flex-row gap-2 sm:justify-center">
+                    <DialogClose
+                      className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-white/[0.06] text-[#a1a1aa] hover:bg-white/[0.1] hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </DialogClose>
+                    <DialogClose
+                      className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-red-500/80 text-white hover:bg-red-500 transition-colors"
+                      onClick={reset}
+                    >
+                      Delete
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
