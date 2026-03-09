@@ -187,7 +187,14 @@ export default function Home() {
         </div>
       </div>
       <div className="fixed bottom-2 right-3 text-xs text-[#71717a]">
-        Built with ❤️ by{" "}
+        Built with{" "}
+        <img
+          src="https://em-content.zobj.net/source/apple/391/red-heart_2764-fe0f.png"
+          alt="❤️"
+          className="inline-block h-3.5 w-3.5 align-[-2px]"
+          draggable={false}
+        />{" "}
+        by{" "}
         <a
           href="https://rin.ms"
           target="_blank"
