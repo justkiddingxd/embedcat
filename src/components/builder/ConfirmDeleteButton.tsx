@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,17 +12,24 @@ interface ConfirmDeleteButtonProps {
 
 export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButtonProps) {
   const [confirming, setConfirming] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirming) {
       setConfirming(false);
+      setPos(null);
       if (timerRef.current) clearTimeout(timerRef.current);
       onConfirm();
     } else {
       setConfirming(true);
-      timerRef.current = setTimeout(() => setConfirming(false), 3000);
+      if (btnRef.current) {
+        const rect = btnRef.current.getBoundingClientRect();
+        setPos({ x: rect.left + rect.width / 2, y: rect.top });
+      }
+      timerRef.current = setTimeout(() => { setConfirming(false); setPos(null); }, 3000);
     }
   };
 
@@ -32,16 +40,9 @@ export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButto
   }, []);
 
   return (
-    <div className="relative">
-      {confirming && (
-        <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-0.5 text-[10px] font-medium text-red-400"
-          style={{ animation: "confirmFadeIn 150ms ease-out" }}
-        >
-          You sure?
-        </div>
-      )}
+    <>
       <Button
+        ref={btnRef}
         variant="ghost"
         size="icon-xs"
         onClick={handleClick}
@@ -52,6 +53,20 @@ export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButto
       >
         <Trash2 className="size-3" />
       </Button>
-    </div>
+      {confirming && pos && createPortal(
+        <div
+          className="fixed z-[9999] whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-0.5 text-[10px] font-medium text-red-400 pointer-events-none"
+          style={{
+            left: pos.x,
+            top: pos.y,
+            transform: "translate(-50%, calc(-100% - 4px))",
+            animation: "confirmFadeIn 150ms ease-out",
+          }}
+        >
+          You sure?
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

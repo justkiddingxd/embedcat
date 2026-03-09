@@ -490,7 +490,7 @@ function HomeContent() {
                       </button>
                       <div className="relative shrink-0">
                         {confirmDeleteId === item.id && (
-                          <div className="absolute bottom-full right-0 mb-1 whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400">
+                          <div className="absolute bottom-full right-0 mb-1 z-[9999] whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400" style={{ animation: "confirmFadeIn 150ms ease-out" }}>
                             You sure?
                           </div>
                         )}

@@ -11,6 +11,11 @@ import {
   EyeOff,
   Quote,
   Link,
+  Heading1,
+  Heading2,
+  Heading3,
+  SquareCode,
+  List,
 } from "lucide-react";
 
 interface FormatAction {
@@ -20,15 +25,25 @@ interface FormatAction {
   suffix: string;
 }
 
-const FORMATS: FormatAction[] = [
-  { icon: Bold, label: "Bold", prefix: "**", suffix: "**" },
-  { icon: Italic, label: "Italic", prefix: "*", suffix: "*" },
-  { icon: Underline, label: "Underline", prefix: "__", suffix: "__" },
-  { icon: Strikethrough, label: "Strikethrough", prefix: "~~", suffix: "~~" },
-  { icon: Code, label: "Code", prefix: "`", suffix: "`" },
-  { icon: EyeOff, label: "Spoiler", prefix: "||", suffix: "||" },
-  { icon: Quote, label: "Quote", prefix: "> ", suffix: "" },
-  { icon: Link, label: "Link", prefix: "[", suffix: "](url)" },
+type ToolbarItem = FormatAction | "divider";
+
+const FORMATS: ToolbarItem[] = [
+  { icon: Bold, label: "Bold (**)", prefix: "**", suffix: "**" },
+  { icon: Italic, label: "Italic (*)", prefix: "*", suffix: "*" },
+  { icon: Underline, label: "Underline (__)", prefix: "__", suffix: "__" },
+  { icon: Strikethrough, label: "Strikethrough (~~)", prefix: "~~", suffix: "~~" },
+  "divider",
+  { icon: Code, label: "Inline Code (`)", prefix: "`", suffix: "`" },
+  { icon: SquareCode, label: "Code Block (```)", prefix: "```\n", suffix: "\n```" },
+  { icon: EyeOff, label: "Spoiler (||)", prefix: "||", suffix: "||" },
+  "divider",
+  { icon: Heading1, label: "Header (#)", prefix: "# ", suffix: "" },
+  { icon: Heading2, label: "Header (##)", prefix: "## ", suffix: "" },
+  { icon: Heading3, label: "Header (###)", prefix: "### ", suffix: "" },
+  "divider",
+  { icon: Quote, label: "Quote (>)", prefix: "> ", suffix: "" },
+  { icon: List, label: "List (-)", prefix: "- ", suffix: "" },
+  { icon: Link, label: "Masked Link", prefix: "[", suffix: "](url)" },
 ];
 
 interface MarkdownTextareaProps
@@ -179,16 +194,20 @@ export function MarkdownTextarea({
           }}
           onMouseDown={(e) => e.preventDefault()}
         >
-          {FORMATS.map((format) => (
-            <button
-              key={format.label}
-              onClick={() => applyFormat(format)}
-              title={format.label}
-              className="flex items-center justify-center rounded-md h-6 w-6 text-[#a1a1aa] hover:text-white hover:bg-white/[0.08] transition-colors"
-            >
-              <format.icon className="size-3.5" />
-            </button>
-          ))}
+          {FORMATS.map((item, i) =>
+            item === "divider" ? (
+              <div key={`d${i}`} className="w-px h-4 bg-white/[0.08] mx-0.5" />
+            ) : (
+              <button
+                key={item.label}
+                onClick={() => applyFormat(item)}
+                title={item.label}
+                className="flex items-center justify-center rounded-md h-6 w-6 text-[#a1a1aa] hover:text-white hover:bg-white/[0.08] transition-colors"
+              >
+                <item.icon className="size-3.5" />
+              </button>
+            )
+          )}
         </div>
       )}
     </div>
