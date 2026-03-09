@@ -126,7 +126,7 @@ function EmbedCard({
 
 export function ClassicBuilder() {
   const { content, setContent, embeds, addEmbed, reorderEmbeds } = useBuilderStore();
-  const { getDragProps, getGripProps } = useDragReorder(reorderEmbeds);
+  const { getDragProps, getGripProps, getContainerProps } = useDragReorder(reorderEmbeds);
 
   return (
     <div className="space-y-1.5">
@@ -166,7 +166,7 @@ export function ClassicBuilder() {
           </span>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1" {...getContainerProps()}>
           {embeds.map((embed, i) => (
             <EmbedCard
               key={embed.id}

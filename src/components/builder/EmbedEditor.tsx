@@ -196,7 +196,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
     reorderFields,
   } = useBuilderStore();
 
-  const { getDragProps: getFieldDragProps, getGripProps: getFieldGripProps } = useDragReorder(
+  const { getDragProps: getFieldDragProps, getGripProps: getFieldGripProps, getContainerProps: getFieldContainerProps } = useDragReorder(
     useCallback((from: number, to: number) => reorderFields(embed.id, from, to), [embed.id, reorderFields])
   );
 
@@ -397,17 +397,19 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 pb-2 space-y-1">
-              {embed.fields.map((field, i) => (
-                <FieldEditor
-                  key={field.id}
-                  embedId={embed.id}
-                  field={field}
-                  index={i}
-                  total={embed.fields.length}
-                  dragProps={getFieldDragProps(i)}
-                  gripProps={getFieldGripProps(i)}
-                />
-              ))}
+              <div className="space-y-1" {...getFieldContainerProps()}>
+                {embed.fields.map((field, i) => (
+                  <FieldEditor
+                    key={field.id}
+                    embedId={embed.id}
+                    field={field}
+                    index={i}
+                    total={embed.fields.length}
+                    dragProps={getFieldDragProps(i)}
+                    gripProps={getFieldGripProps(i)}
+                  />
+                ))}
+              </div>
               {embed.fields.length < LIMITS.EMBED_FIELDS && (
                 <Button
                   variant="outline"

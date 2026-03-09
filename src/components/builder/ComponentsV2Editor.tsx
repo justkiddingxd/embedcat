@@ -600,7 +600,7 @@ function AddTopLevelButton() {
 export function ComponentsV2Editor() {
   const components = useBuilderStore((s) => s.components);
   const reorderComponents = useBuilderStore((s) => s.reorderComponents);
-  const { getDragProps, getGripProps } = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
+  const { getDragProps, getGripProps, getContainerProps } = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
 
   return (
     <div className="space-y-2">
@@ -613,7 +613,7 @@ export function ComponentsV2Editor() {
         </span>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2" {...getContainerProps()}>
         {components.map((comp, i) => (
           <TopLevelCard
             key={comp.id}
