@@ -118,28 +118,24 @@ export function MarkdownTextarea({
       const sel = selectionRef.current;
       if (!el || !sel) return;
 
-      let start = sel.start;
-      let end = sel.end;
-      const raw = value.substring(start, end);
+      const raw = value.substring(sel.start, sel.end);
       const trimmed = raw.replace(/\s+$/, "");
       const trailingSpace = raw.slice(trimmed.length);
-      end = start + trimmed.length;
+      const replacement = format.prefix + trimmed + format.suffix + trailingSpace;
 
-      const before = value.substring(0, start);
-      const after = value.substring(end);
-      const newValue = before + format.prefix + trimmed + format.suffix + trailingSpace + after;
-      onValueChange(newValue);
+      el.focus();
+      el.setSelectionRange(sel.start, sel.end);
+      document.execCommand("insertText", false, replacement);
 
       hideToolbar();
 
       requestAnimationFrame(() => {
-        const newStart = start + format.prefix.length;
+        const newStart = sel.start + format.prefix.length;
         const newEnd = newStart + trimmed.length;
-        el.focus();
         el.setSelectionRange(newStart, newEnd);
       });
     },
-    [value, onValueChange, hideToolbar]
+    [value, hideToolbar]
   );
 
   useEffect(() => {
