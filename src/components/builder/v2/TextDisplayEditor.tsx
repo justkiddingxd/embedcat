@@ -1,6 +1,6 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "../MarkdownTextarea";
 import type { TextDisplayComponent } from "@/types/discord";
 
 interface TextDisplayEditorProps {
@@ -17,9 +17,9 @@ export function TextDisplayEditor({
       <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
         Markdown Content
       </label>
-      <Textarea
+      <MarkdownTextarea
         value={component.content}
-        onChange={(e) => onChange({ content: e.target.value })}
+        onValueChange={(v) => onChange({ content: v })}
         placeholder="Write your markdown here..."
         className="min-h-16 bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] text-sm placeholder:text-[#3f3f46]"
       />

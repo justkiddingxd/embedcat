@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "../MarkdownTextarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -99,9 +99,9 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
 
         {texts.map((td, idx) => (
           <div key={td.id} className="relative">
-            <Textarea
+            <MarkdownTextarea
               value={td.content}
-              onChange={(e) => updateText(idx, e.target.value)}
+              onValueChange={(v) => updateText(idx, v)}
               placeholder="Section text..."
               className="min-h-12 pr-7 bg-[#0a0a0b] border-white/[0.06] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
             />

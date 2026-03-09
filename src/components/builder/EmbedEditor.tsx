@@ -21,6 +21,7 @@ import { LIMITS } from "@/types/discord";
 import type { DiscordEmbed, EmbedField } from "@/types/discord";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "./MarkdownTextarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -152,10 +153,10 @@ function FieldEditor({
             max={LIMITS.EMBED_FIELD_VALUE}
           />
         </div>
-        <Textarea
+        <MarkdownTextarea
           value={field.value}
-          onChange={(e) =>
-            updateField(embedId, field.id, { value: e.target.value })
+          onValueChange={(v) =>
+            updateField(embedId, field.id, { value: v })
           }
           placeholder="Field value"
           maxLength={LIMITS.EMBED_FIELD_VALUE}
@@ -366,10 +367,10 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                     max={LIMITS.EMBED_DESCRIPTION}
                   />
                 </div>
-                <Textarea
+                <MarkdownTextarea
                   value={embed.description ?? ""}
-                  onChange={(e) =>
-                    updateEmbed(embed.id, { description: e.target.value })
+                  onValueChange={(v) =>
+                    updateEmbed(embed.id, { description: v })
                   }
                   placeholder="Supports markdown"
                   maxLength={LIMITS.EMBED_DESCRIPTION}

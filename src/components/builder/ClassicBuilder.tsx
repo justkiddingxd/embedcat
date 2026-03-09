@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useBuilderStore } from "@/store/builder-store";
 import { LIMITS } from "@/types/discord";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "./MarkdownTextarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -147,9 +147,9 @@ export function ClassicBuilder() {
             {content.length}/{LIMITS.CONTENT}
           </span>
         </div>
-        <Textarea
+        <MarkdownTextarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onValueChange={setContent}
           placeholder="Message content"
           maxLength={LIMITS.CONTENT}
           className="bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] placeholder:text-[#3f3f46] text-xs min-h-[48px]"
