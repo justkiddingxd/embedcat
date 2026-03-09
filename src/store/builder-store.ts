@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 import type {
   BuilderMode,
@@ -128,7 +129,9 @@ interface BuilderState {
   reset: () => void;
 }
 
-export const useBuilderStore = create<BuilderState>((set, get) => ({
+export const useBuilderStore = create<BuilderState>()(
+  persist(
+    (set, get) => ({
   mode: "classic",
   webhook: { url: "" },
   content: "",
@@ -304,4 +307,16 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       embeds: [createEmptyEmbed()],
       components: [createContainer()],
     }),
-}));
+    }),
+    {
+      name: "embedcat-builder",
+      partialize: (state) => ({
+        mode: state.mode,
+        webhook: state.webhook,
+        content: state.content,
+        embeds: state.embeds,
+        components: state.components,
+      }),
+    }
+  )
+);
