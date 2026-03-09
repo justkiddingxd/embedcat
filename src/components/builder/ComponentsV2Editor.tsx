@@ -112,6 +112,7 @@ function ComponentCardHeader({
   onMoveUp,
   onMoveDown,
   onDelete,
+  gripProps,
 }: {
   type: number;
   label: string;
@@ -124,13 +125,14 @@ function ComponentCardHeader({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
+  gripProps?: Record<string, unknown>;
 }) {
   return (
     <div
       className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
       onClick={onToggle}
     >
-      <GripVertical className="size-3.5 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing" />
+      <GripVertical {...gripProps} className="size-3.5 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing touch-none" />
       <Badge
         variant="secondary"
         className="shrink-0 text-[10px] px-1.5 h-[18px] gap-1 border-0"
@@ -454,11 +456,13 @@ function TopLevelCard({
   index,
   total,
   dragProps,
+  gripProps,
 }: {
   component: TopLevelComponent;
   index: number;
   total: number;
   dragProps: Record<string, unknown>;
+  gripProps: Record<string, unknown>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { removeComponent, moveComponent, updateComponent } =
@@ -499,6 +503,7 @@ function TopLevelCard({
         onMoveUp={() => moveComponent(component.id, "up")}
         onMoveDown={() => moveComponent(component.id, "down")}
         onDelete={() => removeComponent(component.id)}
+        gripProps={gripProps}
       />
       {!collapsed && (
         <div className="px-3 pb-2 pt-1 border-t border-white/[0.06]">
@@ -595,7 +600,7 @@ function AddTopLevelButton() {
 export function ComponentsV2Editor() {
   const components = useBuilderStore((s) => s.components);
   const reorderComponents = useBuilderStore((s) => s.reorderComponents);
-  const getDragProps = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
+  const { getDragProps, getGripProps } = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
 
   return (
     <div className="space-y-2">
@@ -616,6 +621,7 @@ export function ComponentsV2Editor() {
             index={i}
             total={components.length}
             dragProps={getDragProps(i)}
+            gripProps={getGripProps(i)}
           />
         ))}
       </div>

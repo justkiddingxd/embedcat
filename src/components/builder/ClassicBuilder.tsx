@@ -23,11 +23,13 @@ function EmbedCard({
   index,
   total,
   dragProps,
+  gripProps,
 }: {
   embed: { id: string; title?: string; color?: number };
   index: number;
   total: number;
   dragProps: Record<string, unknown>;
+  gripProps: Record<string, unknown>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { removeEmbed, duplicateEmbed, moveEmbed } = useBuilderStore();
@@ -47,7 +49,7 @@ function EmbedCard({
           className="w-0.5 h-5 rounded-full shrink-0"
           style={{ backgroundColor: colorHex }}
         />
-        <GripVertical className="size-3 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing" />
+        <GripVertical {...gripProps} className="size-3 text-[#3f3f46] shrink-0 cursor-grab active:cursor-grabbing touch-none" />
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <Badge
             variant="secondary"
@@ -124,7 +126,7 @@ function EmbedCard({
 
 export function ClassicBuilder() {
   const { content, setContent, embeds, addEmbed, reorderEmbeds } = useBuilderStore();
-  const getDragProps = useDragReorder(reorderEmbeds);
+  const { getDragProps, getGripProps } = useDragReorder(reorderEmbeds);
 
   return (
     <div className="space-y-1.5">
@@ -172,6 +174,7 @@ export function ClassicBuilder() {
               index={i}
               total={embeds.length}
               dragProps={getDragProps(i)}
+              gripProps={getGripProps(i)}
             />
           ))}
         </div>

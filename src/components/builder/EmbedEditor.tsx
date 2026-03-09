@@ -75,12 +75,14 @@ function FieldEditor({
   index,
   total,
   dragProps,
+  gripProps,
 }: {
   embedId: string;
   field: EmbedField;
   index: number;
   total: number;
   dragProps: Record<string, unknown>;
+  gripProps: Record<string, unknown>;
 }) {
   const { updateField, removeField, moveField } = useBuilderStore();
 
@@ -88,7 +90,7 @@ function FieldEditor({
     <div className="rounded bg-white/[0.02] border border-white/[0.04] p-1.5 space-y-1" {...dragProps}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <GripVertical className="size-3 text-[#3f3f46] cursor-grab active:cursor-grabbing" />
+          <GripVertical {...gripProps} className="size-3 text-[#3f3f46] cursor-grab active:cursor-grabbing touch-none" />
           <span className="text-[10px] font-medium text-muted-foreground">
             Field {index + 1}
           </span>
@@ -194,7 +196,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
     reorderFields,
   } = useBuilderStore();
 
-  const getFieldDragProps = useDragReorder(
+  const { getDragProps: getFieldDragProps, getGripProps: getFieldGripProps } = useDragReorder(
     useCallback((from: number, to: number) => reorderFields(embed.id, from, to), [embed.id, reorderFields])
   );
 
@@ -403,6 +405,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                   index={i}
                   total={embed.fields.length}
                   dragProps={getFieldDragProps(i)}
+                  gripProps={getFieldGripProps(i)}
                 />
               ))}
               {embed.fields.length < LIMITS.EMBED_FIELDS && (
