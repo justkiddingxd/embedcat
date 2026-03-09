@@ -1,0 +1,172 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ButtonEditor } from "./ButtonEditor";
+import { createTextDisplay, createButton, createThumbnail } from "@/store/builder-store";
+import {
+  ComponentType,
+  ButtonStyle,
+  LIMITS,
+  type SectionComponent,
+  type TextDisplayComponent,
+  type ButtonComponent,
+  type ThumbnailComponent,
+} from "@/types/discord";
+import { Plus, X, ImageIcon } from "lucide-react";
+
+interface SectionEditorProps {
+  component: SectionComponent;
+  onChange: (updates: Partial<SectionComponent>) => void;
+}
+
+export function SectionEditor({ component, onChange }: SectionEditorProps) {
+  const texts = component.components;
+  const accessory = component.accessory;
+
+  const updateText = (idx: number, content: string) => {
+    const next = texts.map((t, i) =>
+      i === idx ? { ...t, content } : t
+    );
+    onChange({ components: next });
+  };
+
+  const addText = () => {
+    if (texts.length >= LIMITS.SECTION_TEXT_COMPONENTS) return;
+    onChange({ components: [...texts, createTextDisplay("")] });
+  };
+
+  const removeText = (idx: number) => {
+    if (texts.length <= 1) return;
+    onChange({ components: texts.filter((_, i) => i !== idx) });
+  };
+
+  const accessoryType: string = accessory
+    ? accessory.type === ComponentType.Button
+      ? "button"
+      : "thumbnail"
+    : "none";
+
+  const setAccessoryType = (val: string | null) => {
+    if (!val) return;
+    if (val === "none") {
+      onChange({ accessory: undefined });
+    } else if (val === "button") {
+      onChange({ accessory: createButton() });
+    } else {
+      onChange({ accessory: createThumbnail() });
+    }
+  };
+
+  const updateAccessory = (
+    updates: Partial<ButtonComponent> | Partial<ThumbnailComponent>
+  ) => {
+    if (!accessory) return;
+    onChange({ accessory: { ...accessory, ...updates } as typeof accessory });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-400">
+            Text Content
+            <Badge
+              variant="secondary"
+              className="ml-2 bg-[#1e1f22] text-gray-400 text-[10px] h-4"
+            >
+              {texts.length}/{LIMITS.SECTION_TEXT_COMPONENTS}
+            </Badge>
+          </span>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={addText}
+            disabled={texts.length >= LIMITS.SECTION_TEXT_COMPONENTS}
+            className="text-[#5865f2] hover:text-[#7983f5] hover:bg-[#5865f2]/10 text-xs gap-1"
+          >
+            <Plus className="size-3" />
+            Add
+          </Button>
+        </div>
+
+        {texts.map((td, idx) => (
+          <div key={td.id} className="relative">
+            <Textarea
+              value={td.content}
+              onChange={(e) => updateText(idx, e.target.value)}
+              placeholder="Section text..."
+              className="min-h-14 pr-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600 focus-visible:border-[#5865f2] focus-visible:ring-[#5865f2]/25"
+            />
+            {texts.length > 1 && (
+              <button
+                onClick={() => removeText(idx)}
+                className="absolute top-1.5 right-1.5 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-[#3f4147]/50 pt-3 space-y-2">
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-gray-400 shrink-0">Accessory</label>
+          <Select value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
+            <SelectTrigger className="h-7 w-32 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="border-[#3f4147] bg-[#2b2d31]">
+              <SelectItem value="none" className="text-gray-200 text-xs">
+                None
+              </SelectItem>
+              <SelectItem value="button" className="text-gray-200 text-xs">
+                Button
+              </SelectItem>
+              <SelectItem value="thumbnail" className="text-gray-200 text-xs">
+                Thumbnail
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {accessory && accessory.type === ComponentType.Button && (
+          <div className="rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5">
+            <ButtonEditor
+              button={accessory}
+              onChange={(updates) => updateAccessory(updates)}
+            />
+          </div>
+        )}
+
+        {accessory && accessory.type === ComponentType.Thumbnail && (
+          <div className="rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="size-3.5 text-gray-500 shrink-0" />
+              <Input
+                value={accessory.media.url}
+                onChange={(e) =>
+                  updateAccessory({
+                    media: { url: e.target.value },
+                  } as Partial<ThumbnailComponent>)
+                }
+                placeholder="https://example.com/thumb.png"
+                className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
