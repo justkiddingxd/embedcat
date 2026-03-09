@@ -114,15 +114,18 @@ interface BuilderState {
   updateEmbed: (id: string, embed: Partial<DiscordEmbed>) => void;
   duplicateEmbed: (id: string) => void;
   moveEmbed: (id: string, direction: "up" | "down") => void;
+  reorderEmbeds: (fromIndex: number, toIndex: number) => void;
   addField: (embedId: string) => void;
   removeField: (embedId: string, fieldId: string) => void;
   updateField: (embedId: string, fieldId: string, field: Partial<EmbedField>) => void;
   moveField: (embedId: string, fieldId: string, direction: "up" | "down") => void;
+  reorderFields: (embedId: string, fromIndex: number, toIndex: number) => void;
 
   addComponent: (component: TopLevelComponent) => void;
   removeComponent: (id: string) => void;
   updateComponent: (id: string, updater: (c: TopLevelComponent) => TopLevelComponent) => void;
   moveComponent: (id: string, direction: "up" | "down") => void;
+  reorderComponents: (fromIndex: number, toIndex: number) => void;
 
   setJsonEditorOpen: (open: boolean) => void;
   importFromJson: (json: string) => boolean;
@@ -181,6 +184,14 @@ export const useBuilderStore = create<BuilderState>()(
       return { embeds };
     }),
 
+  reorderEmbeds: (fromIndex, toIndex) =>
+    set((s) => {
+      const embeds = [...s.embeds];
+      const [moved] = embeds.splice(fromIndex, 1);
+      embeds.splice(toIndex, 0, moved);
+      return { embeds };
+    }),
+
   addField: (embedId) =>
     set((s) => ({
       embeds: s.embeds.map((e) =>
@@ -227,6 +238,17 @@ export const useBuilderStore = create<BuilderState>()(
       }),
     })),
 
+  reorderFields: (embedId, fromIndex, toIndex) =>
+    set((s) => ({
+      embeds: s.embeds.map((e) => {
+        if (e.id !== embedId) return e;
+        const fields = [...e.fields];
+        const [moved] = fields.splice(fromIndex, 1);
+        fields.splice(toIndex, 0, moved);
+        return { ...e, fields };
+      }),
+    })),
+
   addComponent: (component) =>
     set((s) => ({ components: [...s.components, component] })),
 
@@ -248,6 +270,14 @@ export const useBuilderStore = create<BuilderState>()(
       if (newIdx < 0 || newIdx >= s.components.length) return s;
       const components = [...s.components];
       [components[idx], components[newIdx]] = [components[newIdx], components[idx]];
+      return { components };
+    }),
+
+  reorderComponents: (fromIndex, toIndex) =>
+    set((s) => {
+      const components = [...s.components];
+      const [moved] = components.splice(fromIndex, 1);
+      components.splice(toIndex, 0, moved);
       return { components };
     }),
 
