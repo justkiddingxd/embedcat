@@ -10,6 +10,12 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+type View = "days" | "months" | "years";
 
 interface DateTimePickerProps {
   value?: string;
@@ -29,6 +35,9 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
   const [selectedDay, setSelectedDay] = useState(parsed?.getDate() ?? now.getDate());
   const [hours, setHours] = useState(parsed ? pad(parsed.getHours()) : "00");
   const [minutes, setMinutes] = useState(parsed ? pad(parsed.getMinutes()) : "00");
+  const [view, setView] = useState<View>("days");
+
+  const yearRangeStart = viewYear - (viewYear % 12);
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(viewYear, viewMonth, 1);
@@ -77,6 +86,16 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
     onChange(d.toISOString());
   };
 
+  const selectMonth = (month: number) => {
+    setViewMonth(month);
+    setView("days");
+  };
+
+  const selectYear = (year: number) => {
+    setViewYear(year);
+    setView("months");
+  };
+
   const updateTime = (h: string, m: string) => {
     setHours(h);
     setMinutes(m);
@@ -100,12 +119,36 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
   };
 
   const displayText = parsed
-    ? `${MONTHS[parsed.getMonth()].slice(0, 3)} ${parsed.getDate()}, ${parsed.getFullYear()} ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
+    ? `${MONTHS_SHORT[parsed.getMonth()]} ${parsed.getDate()}, ${parsed.getFullYear()} ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
     : "";
 
+  const headerClick = () => {
+    if (view === "days") setView("months");
+    else if (view === "months") setView("years");
+  };
+
+  const headerLabel =
+    view === "days"
+      ? `${MONTHS[viewMonth]} ${viewYear}`
+      : view === "months"
+        ? `${viewYear}`
+        : `${yearRangeStart} – ${yearRangeStart + 11}`;
+
+  const prevNav = () => {
+    if (view === "days") prevMonth();
+    else if (view === "months") setViewYear(viewYear - 1);
+    else setViewYear(viewYear - 12);
+  };
+
+  const nextNav = () => {
+    if (view === "days") nextMonth();
+    else if (view === "months") setViewYear(viewYear + 1);
+    else setViewYear(viewYear + 12);
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger className="flex items-center gap-1.5 w-full group cursor-pointer">
+    <Popover onOpenChange={() => setView("days")}>
+      <PopoverTrigger className="flex items-center gap-1.5 w-full group">
         <div className="flex h-7 flex-1 items-center rounded-md border border-white/[0.06] bg-[#0a0a0b] px-2 text-xs transition-colors group-hover:border-white/[0.12]">
           <Calendar className="size-3 text-[#52525b] mr-1.5 shrink-0" />
           {displayText ? (
@@ -122,42 +165,87 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
       >
         <div className="p-2 space-y-2">
           <div className="flex items-center justify-between">
-            <button onClick={prevMonth} className="p-1 rounded text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors">
+            <button onClick={prevNav} className="p-1 rounded text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors">
               <ChevronLeft className="size-3.5" />
             </button>
-            <span className="text-xs font-semibold text-[#e4e4e7]">
-              {MONTHS[viewMonth]} {viewYear}
-            </span>
-            <button onClick={nextMonth} className="p-1 rounded text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors">
+            <button
+              onClick={headerClick}
+              className="text-xs font-semibold text-[#e4e4e7] hover:text-white hover:bg-white/[0.06] rounded px-2 py-0.5 transition-colors"
+            >
+              {headerLabel}
+            </button>
+            <button onClick={nextNav} className="p-1 rounded text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors">
               <ChevronRight className="size-3.5" />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-0">
-            {DAYS.map((d) => (
-              <div key={d} className="flex items-center justify-center h-6 text-[10px] font-medium text-[#52525b]">
-                {d}
-              </div>
-            ))}
-            {calendarDays.map((cell, i) => (
-              <button
-                key={i}
-                onClick={() => cell.current && selectDay(cell.day)}
-                disabled={!cell.current}
-                className={`flex items-center justify-center h-7 text-[11px] rounded transition-all ${
-                  !cell.current
-                    ? "text-[#27272a] cursor-default"
-                    : isSelected(cell.day)
+          {view === "days" && (
+            <div className="grid grid-cols-7 gap-0">
+              {DAYS.map((d) => (
+                <div key={d} className="flex items-center justify-center h-6 text-[10px] font-medium text-[#52525b]">
+                  {d}
+                </div>
+              ))}
+              {calendarDays.map((cell, i) => (
+                <button
+                  key={i}
+                  onClick={() => cell.current && selectDay(cell.day)}
+                  disabled={!cell.current}
+                  className={`flex items-center justify-center h-7 text-[11px] rounded transition-all ${
+                    !cell.current
+                      ? "text-[#27272a] cursor-default"
+                      : isSelected(cell.day)
+                        ? "bg-[#5865f2] text-white font-semibold"
+                        : isToday(cell.day)
+                          ? "text-[#5865f2] font-semibold hover:bg-[#5865f2]/10"
+                          : "text-[#a1a1aa] hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                >
+                  {cell.day}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {view === "months" && (
+            <div className="grid grid-cols-3 gap-1">
+              {MONTHS_SHORT.map((m, i) => (
+                <button
+                  key={m}
+                  onClick={() => selectMonth(i)}
+                  className={`flex items-center justify-center h-8 text-xs rounded transition-all ${
+                    i === viewMonth && viewYear === (parsed?.getFullYear() ?? -1)
                       ? "bg-[#5865f2] text-white font-semibold"
-                      : isToday(cell.day)
+                      : i === now.getMonth() && viewYear === now.getFullYear()
                         ? "text-[#5865f2] font-semibold hover:bg-[#5865f2]/10"
                         : "text-[#a1a1aa] hover:bg-white/[0.06] hover:text-white"
-                }`}
-              >
-                {cell.day}
-              </button>
-            ))}
-          </div>
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {view === "years" && (
+            <div className="grid grid-cols-3 gap-1">
+              {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((y) => (
+                <button
+                  key={y}
+                  onClick={() => selectYear(y)}
+                  className={`flex items-center justify-center h-8 text-xs rounded transition-all ${
+                    y === viewYear && viewYear === (parsed?.getFullYear() ?? -1)
+                      ? "bg-[#5865f2] text-white font-semibold"
+                      : y === now.getFullYear()
+                        ? "text-[#5865f2] font-semibold hover:bg-[#5865f2]/10"
+                        : "text-[#a1a1aa] hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 border-t border-white/[0.06] pt-2">
             <Clock className="size-3 text-[#52525b] shrink-0" />
