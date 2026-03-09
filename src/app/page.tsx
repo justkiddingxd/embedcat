@@ -22,17 +22,18 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink, Bookmark, Pencil, ChevronDown } from "lucide-react";
+import { RotateCcw, Layers, Box, AlertTriangle, Share2, Check, Trash2, ExternalLink, Bookmark, Pencil, ChevronDown, Undo2, Redo2 } from "lucide-react";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
 import { nanoid } from "nanoid";
 import type { DiscordEmbed, EmbedField, TopLevelComponent } from "@/types/discord";
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 const STORAGE_KEY = "embedcat-preview-width";
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 600;
-const DEFAULT_WIDTH = 380;
+const DEFAULT_WIDTH = 600;
 
 function loadWidth(): number {
   if (typeof window === "undefined") return DEFAULT_WIDTH;
@@ -158,11 +159,11 @@ function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "c
 }
 
 function HomeContent() {
-  const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
+  const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload, undo, redo, canUndo, canRedo } = useBuilderStore();
   const { data: session } = useSession();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [previewWidth, setPreviewWidth] = useState(DEFAULT_WIDTH);
+  const [isMobile, setIsMobile] = useState(false);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
@@ -180,6 +181,11 @@ function HomeContent() {
 
   useEffect(() => {
     setPreviewWidth(loadWidth());
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   useEffect(() => {
@@ -196,7 +202,10 @@ function HomeContent() {
           if (uid && data.userId === uid) setCurrentSavedId(id);
         }
       })
-      .catch(() => { void 0; });
+      .catch(() => { void 0; })
+      .finally(() => {
+        window.history.replaceState(null, "", window.location.pathname);
+      });
   }, [searchParams, loadFromPayload]);
 
   const buildCurrentPayload = useCallback(() => {
@@ -218,7 +227,6 @@ function HomeContent() {
       const url = `${window.location.origin}?id=${data.id}`;
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
-      router.replace(`?id=${data.id}`);
       setTimeout(() => setShareCopied(false), 2000);
     } catch { void 0; }
     setShareLoading(false);
@@ -245,7 +253,6 @@ function HomeContent() {
         });
         const data = (await res.json()) as { id: string };
         setCurrentSavedId(data.id);
-        router.replace(`?id=${data.id}`);
       }
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
@@ -292,7 +299,6 @@ function HomeContent() {
   const handleLoadSaved = (item: SavedEmbedItem) => {
     loadFromPayload(item.mode as "classic" | "components_v2", item.payload);
     setCurrentSavedId(item.id);
-    router.replace(`?id=${item.id}`);
     setSavedOpen(false);
   };
 
@@ -336,11 +342,11 @@ function HomeContent() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#09090b]">
       <Header onOpenSaved={handleOpenSaved} />
-      <div className="mx-auto flex w-full max-w-[1400px] flex-1 overflow-hidden">
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex h-9 items-center justify-between border-b border-white/[0.06] px-3">
-            <ModeToggle mode={mode} onModeChange={setMode} />
-            <div className="flex items-center gap-1">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col overflow-hidden md:flex-row">
+        <div className="flex min-h-0 flex-[3] flex-col overflow-hidden md:flex-1">
+          <div className="flex min-h-9 h-auto flex-wrap items-center justify-between gap-y-1 border-b border-white/[0.06] px-3">
+            <ModeToggle mode={mode} onModeChange={(m) => { setMode(m); setCurrentSavedId(null); }} />
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 onClick={handleCopyLink}
                 disabled={shareLoading}
@@ -360,6 +366,22 @@ function HomeContent() {
                 </button>
               )}
               <JsonEditor />
+              <button
+                onClick={undo}
+                disabled={!canUndo()}
+                className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-25 disabled:pointer-events-none"
+                title="Undo"
+              >
+                <Undo2 className="size-3.5" />
+              </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo()}
+                className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-25 disabled:pointer-events-none"
+                title="Redo"
+              >
+                <Redo2 className="size-3.5" />
+              </button>
               <Dialog>
                 <DialogTrigger
                   className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors"
@@ -387,7 +409,7 @@ function HomeContent() {
                     </DialogClose>
                     <DialogClose
                       className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-red-500/80 text-white hover:bg-red-500 transition-colors"
-                      onClick={() => { reset(); setCurrentSavedId(null); router.replace("/"); }}
+                      onClick={() => { reset(); setCurrentSavedId(null); window.history.replaceState(null, "", window.location.pathname); }}
                     >
                       Delete
                     </DialogClose>
@@ -405,19 +427,21 @@ function HomeContent() {
           </div>
         </div>
 
-        <div
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          className="relative z-10 w-1 shrink-0 cursor-col-resize select-none group"
-        >
-          <div className="absolute inset-y-0 -left-1 -right-1" />
-          <div className="h-full w-px mx-auto bg-white/[0.06] group-hover:bg-[#5865f2]/50 group-active:bg-[#5865f2] transition-colors" />
-        </div>
+        {!isMobile && (
+          <div
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            className="relative z-10 w-1 shrink-0 cursor-col-resize select-none group"
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+            <div className="h-full w-px mx-auto bg-white/[0.06] group-hover:bg-[#5865f2]/50 group-active:bg-[#5865f2] transition-colors" />
+          </div>
+        )}
 
         <div
-          className="flex shrink-0 flex-col bg-[#09090b]"
-          style={{ width: previewWidth }}
+          className="flex min-h-0 flex-[2] flex-col bg-[#09090b] md:flex-none md:shrink-0"
+          style={isMobile ? undefined : { width: previewWidth }}
         >
           <div className="flex h-9 items-center border-b border-white/[0.06] px-3">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#52525b]">
@@ -441,7 +465,7 @@ function HomeContent() {
           }}
         >
           <div
-            className="w-full max-w-2xl max-h-[85vh] min-h-[50vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col"
+            className="mx-3 w-[calc(100%-1.5rem)] max-w-2xl max-h-[85vh] min-h-[50vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col sm:mx-0 sm:w-full"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-[#e4e4e7]">Saved Embeds</h2>
@@ -519,7 +543,8 @@ function HomeContent() {
           </div>
         </div>
       )}
-      <div className="fixed bottom-2 right-3 text-xs text-[#71717a]">
+      <ChatWidget />
+      <div className="fixed bottom-1 left-1/2 -translate-x-1/2 text-xs text-[#71717a] md:left-auto md:translate-x-0 md:right-3 md:bottom-2">
         Built with{" "}
         <img
           src="https://em-content.zobj.net/source/apple/391/red-heart_2764-fe0f.png"
