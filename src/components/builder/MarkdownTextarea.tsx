@@ -9,13 +9,8 @@ import {
   Code,
   Underline,
   EyeOff,
-  Quote,
   Link,
-  Heading1,
-  Heading2,
-  Heading3,
   SquareCode,
-  List,
 } from "lucide-react";
 
 interface FormatAction {
@@ -37,12 +32,6 @@ const FORMATS: ToolbarItem[] = [
   { icon: SquareCode, label: "Code Block (```)", prefix: "```\n", suffix: "\n```" },
   { icon: EyeOff, label: "Spoiler (||)", prefix: "||", suffix: "||" },
   "divider",
-  { icon: Heading1, label: "Header (#)", prefix: "# ", suffix: "" },
-  { icon: Heading2, label: "Header (##)", prefix: "## ", suffix: "" },
-  { icon: Heading3, label: "Header (###)", prefix: "### ", suffix: "" },
-  "divider",
-  { icon: Quote, label: "Quote (>)", prefix: "> ", suffix: "" },
-  { icon: List, label: "List (-)", prefix: "- ", suffix: "" },
   { icon: Link, label: "Masked Link", prefix: "[", suffix: "](url)" },
 ];
 
