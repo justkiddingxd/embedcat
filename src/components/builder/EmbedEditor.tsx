@@ -306,13 +306,11 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <div className="py-1.5 px-2 bg-white/[0.03]">
-          <div className="flex items-center gap-1.5">
-            <Type className="size-3 text-[#71717a]" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
-              Body
-            </span>
-          </div>
+        <div className="flex items-center gap-1.5 py-1.5 px-2 bg-white/[0.03]">
+          <Type className="size-3 text-[#71717a]" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
+            Body
+          </span>
         </div>
         <div className="px-2 py-1.5 space-y-1">
 
