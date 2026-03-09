@@ -171,39 +171,32 @@ export async function sendWebhookMessage(
   webhook: WebhookConfig,
   payload: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
-  // Validate webhook URL
   const webhookRegex = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/.+$/;
   if (!webhookRegex.test(webhook.url)) {
     return { success: false, error: "Invalid webhook URL" };
   }
 
-  // Apply embed.cat branding defaults
   if (!payload.username) {
     payload.username = "embed.cat";
   }
 
-  const isV2 = (payload.flags as number) === IS_COMPONENTS_V2;
-  const url = new URL(webhook.url);
-  url.searchParams.set("wait", "true");
-  if (isV2) {
-    url.searchParams.set("with_components", "true");
-  }
-  if (webhook.thread_id) {
-    url.searchParams.set("thread_id", webhook.thread_id);
-  }
-
   try {
-    const res = await fetch(url.toString(), {
+    const res = await fetch("/api/webhook/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        webhookUrl: webhook.url,
+        threadId: webhook.thread_id,
+        payload,
+      }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
       return {
         success: false,
-        error: (err as { message?: string }).message || `HTTP ${res.status}`,
+        error: (data as { error?: string }).error || `HTTP ${res.status}`,
       };
     }
 
