@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import {
   ArrowDown,
   ArrowUp,
@@ -201,6 +202,12 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
     useCallback((from: number, to: number) => reorderFields(embed.id, from, to), [embed.id, reorderFields])
   );
 
+  const [authorCollapsed, toggleAuthor] = usePersistedCollapse(`${embed.id}-author`, true);
+  const [bodyCollapsed, toggleBody] = usePersistedCollapse(`${embed.id}-body`, false);
+  const [fieldsCollapsed, toggleFields] = usePersistedCollapse(`${embed.id}-fields`, embed.fields.length === 0);
+  const [imagesCollapsed, toggleImages] = usePersistedCollapse(`${embed.id}-images`, true);
+  const [footerCollapsed, toggleFooter] = usePersistedCollapse(`${embed.id}-footer`, true);
+
   const totalEmbeds = embeds.length;
   const colorHex = `#${(embed.color ?? 0x5865f2).toString(16).padStart(6, "0")}`;
   const showHeader = embedIndex !== undefined;
@@ -272,7 +279,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
       )}
 
       <div className="space-y-0">
-        <Collapsible defaultOpen={false}>
+        <Collapsible open={!authorCollapsed} onOpenChange={toggleAuthor}>
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<User className="size-3" />}
@@ -321,7 +328,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <Collapsible defaultOpen>
+        <Collapsible open={!bodyCollapsed} onOpenChange={toggleBody}>
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<Type className="size-3" />}
@@ -391,7 +398,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <Collapsible defaultOpen={embed.fields.length > 0}>
+        <Collapsible open={!fieldsCollapsed} onOpenChange={toggleFields}>
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<LayoutGrid className="size-3" />}
@@ -430,7 +437,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <Collapsible defaultOpen={false}>
+        <Collapsible open={!imagesCollapsed} onOpenChange={toggleImages}>
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<ImageIcon className="size-3" />}
@@ -469,7 +476,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
         <div className="border-t border-white/[0.04]" />
 
-        <Collapsible defaultOpen={false}>
+        <Collapsible open={!footerCollapsed} onOpenChange={toggleFooter}>
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<MessageSquare className="size-3" />}

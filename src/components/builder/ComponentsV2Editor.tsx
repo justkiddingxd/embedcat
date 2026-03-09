@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
+import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import { ColorPicker } from "./ColorPicker";
 import {
   ArrowUp,
@@ -194,7 +195,7 @@ function ContainerChildCard({
   dragProps?: Record<string, unknown>;
   gripProps?: Record<string, unknown>;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-child-${child.id}`, false);
   const { updateComponent } = useBuilderStore();
 
   const meta = TYPE_META[child.type] ?? {
@@ -243,7 +244,7 @@ function ContainerChildCard({
         index={index}
         total={total}
         collapsed={collapsed}
-        onToggle={() => setCollapsed(!collapsed)}
+        onToggle={toggleCollapsed}
         onMoveUp={() => moveChild("up")}
         onMoveDown={() => moveChild("down")}
         onDelete={removeChild}
@@ -477,7 +478,7 @@ function TopLevelCard({
   dragProps: Record<string, unknown>;
   gripProps: Record<string, unknown>;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-${component.id}`, false);
   const { removeComponent, moveComponent, updateComponent } =
     useBuilderStore();
 
@@ -512,7 +513,7 @@ function TopLevelCard({
         index={index}
         total={total}
         collapsed={collapsed}
-        onToggle={() => setCollapsed(!collapsed)}
+        onToggle={toggleCollapsed}
         onMoveUp={() => moveComponent(component.id, "up")}
         onMoveDown={() => moveComponent(component.id, "down")}
         onDelete={() => removeComponent(component.id)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import {
   ChevronDown,
   ChevronUp,
@@ -31,7 +31,7 @@ function EmbedCard({
   dragProps: Record<string, unknown>;
   gripProps: Record<string, unknown>;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, toggleCollapsed] = usePersistedCollapse(`embed-${embed.id}`, false);
   const { removeEmbed, duplicateEmbed, moveEmbed } = useBuilderStore();
   const store = useBuilderStore();
   const fullEmbed = store.embeds.find((e) => e.id === embed.id)!;
@@ -43,7 +43,7 @@ function EmbedCard({
     <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
       <div
         className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer select-none"
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={toggleCollapsed}
       >
         <div
           className="w-0.5 h-5 rounded-full shrink-0"
