@@ -17,7 +17,7 @@ export default function Home() {
     <div className="flex h-screen flex-col overflow-hidden bg-[#09090b]">
       <Header />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 overflow-hidden">
-        <div className="flex w-[440px] shrink-0 flex-col border-r border-white/[0.06]">
+        <div className="flex flex-1 flex-col border-r border-white/[0.06]">
           <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-1.5">
             <div className="flex items-center gap-0.5 rounded-full bg-[#111113] p-0.5 ring-1 ring-white/[0.06]">
               <button
@@ -40,7 +40,7 @@ export default function Home() {
                 }`}
               >
                 <Box className="size-3" />
-                V2
+                Components
               </button>
             </div>
             <div className="flex items-center gap-1">
@@ -64,7 +64,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col bg-[#09090b]">
+        <div className="flex w-[380px] shrink-0 flex-col bg-[#09090b]">
           <div className="flex items-center border-b border-white/[0.06] px-3 py-1.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#52525b]">
               Preview
