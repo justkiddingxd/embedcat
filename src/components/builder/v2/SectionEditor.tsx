@@ -15,10 +15,8 @@ import { ButtonEditor } from "./ButtonEditor";
 import { createTextDisplay, createButton, createThumbnail } from "@/store/builder-store";
 import {
   ComponentType,
-  ButtonStyle,
   LIMITS,
   type SectionComponent,
-  type TextDisplayComponent,
   type ButtonComponent,
   type ThumbnailComponent,
 } from "@/types/discord";
@@ -75,14 +73,14 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-[#71717a]">
             Text Content
             <Badge
               variant="secondary"
-              className="ml-2 bg-[#1e1f22] text-gray-400 text-[10px] h-4"
+              className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
             >
               {texts.length}/{LIMITS.SECTION_TEXT_COMPONENTS}
             </Badge>
@@ -105,12 +103,12 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
               value={td.content}
               onChange={(e) => updateText(idx, e.target.value)}
               placeholder="Section text..."
-              className="min-h-14 pr-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600 focus-visible:border-[#5865f2] focus-visible:ring-[#5865f2]/25"
+              className="min-h-12 pr-7 bg-[#0a0a0b] border-white/[0.06] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
             />
             {texts.length > 1 && (
               <button
                 onClick={() => removeText(idx)}
-                className="absolute top-1.5 right-1.5 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                className="absolute top-1.5 right-1.5 p-0.5 rounded text-[#52525b] hover:text-red-400 hover:bg-red-400/10 transition-colors"
               >
                 <X className="size-3" />
               </button>
@@ -119,21 +117,21 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
         ))}
       </div>
 
-      <div className="border-t border-[#3f4147]/50 pt-3 space-y-2">
+      <div className="border-t border-white/[0.04] pt-2 space-y-1.5">
         <div className="flex items-center gap-3">
-          <label className="text-xs text-gray-400 shrink-0">Accessory</label>
+          <label className="text-xs text-[#71717a] shrink-0">Accessory</label>
           <Select value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
-            <SelectTrigger className="h-7 w-32 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs">
+            <SelectTrigger className="h-7 w-32 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-[#3f4147] bg-[#2b2d31]">
-              <SelectItem value="none" className="text-gray-200 text-xs">
+            <SelectContent className="border-white/[0.08] bg-[#111113]">
+              <SelectItem value="none" className="text-[#e4e4e7] text-xs">
                 None
               </SelectItem>
-              <SelectItem value="button" className="text-gray-200 text-xs">
+              <SelectItem value="button" className="text-[#e4e4e7] text-xs">
                 Button
               </SelectItem>
-              <SelectItem value="thumbnail" className="text-gray-200 text-xs">
+              <SelectItem value="thumbnail" className="text-[#e4e4e7] text-xs">
                 Thumbnail
               </SelectItem>
             </SelectContent>
@@ -141,7 +139,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
         </div>
 
         {accessory && accessory.type === ComponentType.Button && (
-          <div className="rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5">
+          <div className="rounded-md border border-white/[0.04] bg-white/[0.02] p-2">
             <ButtonEditor
               button={accessory}
               onChange={(updates) => updateAccessory(updates)}
@@ -150,9 +148,9 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
         )}
 
         {accessory && accessory.type === ComponentType.Thumbnail && (
-          <div className="rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5">
+          <div className="rounded-md border border-white/[0.04] bg-white/[0.02] p-2">
             <div className="flex items-center gap-2">
-              <ImageIcon className="size-3.5 text-gray-500 shrink-0" />
+              <ImageIcon className="size-3.5 text-[#52525b] shrink-0" />
               <Input
                 value={accessory.media.url}
                 onChange={(e) =>
@@ -161,7 +159,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
                   } as Partial<ThumbnailComponent>)
                 }
                 placeholder="https://example.com/thumb.png"
-                className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+                className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
               />
             </div>
           </div>

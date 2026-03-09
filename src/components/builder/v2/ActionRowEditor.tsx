@@ -36,13 +36,13 @@ export function ActionRowEditor({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-[#71717a]">
           Buttons
           <Badge
             variant="secondary"
-            className="ml-2 bg-[#1e1f22] text-gray-400 text-[10px] h-4"
+            className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
           >
             {buttons.length}/{LIMITS.ACTION_ROW_BUTTONS}
           </Badge>
@@ -59,15 +59,15 @@ export function ActionRowEditor({
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {buttons.map((btn, idx) => (
           <div
             key={btn.id}
-            className="relative rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5"
+            className="relative rounded-md border border-white/[0.04] bg-white/[0.02] p-2"
           >
             <button
               onClick={() => removeButton(idx)}
-              className="absolute top-1.5 right-1.5 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+              className="absolute top-1.5 right-1.5 p-0.5 rounded text-[#52525b] hover:text-red-400 hover:bg-red-400/10 transition-colors"
             >
               <X className="size-3" />
             </button>

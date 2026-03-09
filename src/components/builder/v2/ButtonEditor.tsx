@@ -31,7 +31,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
   return (
     <div className="grid grid-cols-[1fr_1fr] gap-2">
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
           Style
         </label>
         <Select
@@ -49,15 +49,15 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
             onChange(updates);
           }}
         >
-          <SelectTrigger className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs">
+          <SelectTrigger className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="border-[#3f4147] bg-[#2b2d31]">
+          <SelectContent className="border-white/[0.08] bg-[#111113]">
             {STYLE_OPTIONS.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={String(opt.value)}
-                className="text-gray-200 text-xs"
+                className="text-[#e4e4e7] text-xs"
               >
                 <span className="flex items-center gap-2">
                   <span
@@ -73,19 +73,19 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
           Label
         </label>
         <Input
           value={button.label || ""}
           onChange={(e) => onChange({ label: e.target.value })}
           placeholder="Click me"
-          className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+          className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+        <label className="text-[10px] font-medium text-[#52525b] uppercase tracking-[0.08em]">
           {isLink ? "URL" : "Custom ID"}
         </label>
         <Input
@@ -98,7 +98,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
             )
           }
           placeholder={isLink ? "https://..." : "my-button-id"}
-          className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+          className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
         />
       </div>
 
@@ -110,7 +110,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
             className="data-checked:bg-[#5865f2]"
             size="sm"
           />
-          <Label className="text-[10px] text-gray-400 cursor-pointer">
+          <Label className="text-[10px] text-[#71717a] cursor-pointer">
             Disabled
           </Label>
         </div>

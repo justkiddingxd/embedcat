@@ -49,13 +49,13 @@ export function MediaGalleryEditor({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-[#71717a]">
           Media Items
           <Badge
             variant="secondary"
-            className="ml-2 bg-[#1e1f22] text-gray-400 text-[10px] h-4"
+            className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
           >
             {items.length}/{LIMITS.MEDIA_GALLERY_ITEMS}
           </Badge>
@@ -72,40 +72,40 @@ export function MediaGalleryEditor({
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {items.map((item, idx) => (
           <div
             key={item.id}
-            className="relative rounded-md border border-[#3f4147]/50 bg-[#1e1f22]/50 p-2.5 space-y-2"
+            className="relative rounded-md border border-white/[0.04] bg-white/[0.02] p-2 space-y-1.5"
           >
             <button
               onClick={() => removeItem(idx)}
               disabled={items.length <= 1}
-              className="absolute top-1.5 right-1.5 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              className="absolute top-1.5 right-1.5 p-0.5 rounded text-[#52525b] hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
             >
               <X className="size-3" />
             </button>
 
             <div className="flex items-center gap-2">
-              <ImageIcon className="size-3.5 text-gray-500 shrink-0" />
+              <ImageIcon className="size-3.5 text-[#52525b] shrink-0" />
               <Input
                 value={item.media.url}
                 onChange={(e) =>
                   updateItem(idx, { media: { url: e.target.value } })
                 }
                 placeholder="https://example.com/image.png"
-                className="h-7 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+                className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
               />
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Input
                 value={item.description || ""}
                 onChange={(e) =>
                   updateItem(idx, { description: e.target.value })
                 }
                 placeholder="Description (alt text)"
-                className="h-7 flex-1 border-[#3f4147] bg-[#1e1f22] text-gray-200 text-xs placeholder:text-gray-600"
+                className="h-7 flex-1 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
               />
               <div className="flex items-center gap-1.5 shrink-0">
                 <Switch
@@ -116,7 +116,7 @@ export function MediaGalleryEditor({
                   className="data-checked:bg-[#5865f2]"
                   size="sm"
                 />
-                <Label className="text-[10px] text-gray-500 cursor-pointer">
+                <Label className="text-[10px] text-[#52525b] cursor-pointer">
                   Spoiler
                 </Label>
               </div>

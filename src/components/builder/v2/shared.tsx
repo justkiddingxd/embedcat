@@ -26,11 +26,11 @@ export function ComponentHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-t-lg bg-[#1e1f22] px-3 py-2">
-      <Icon className="size-3.5 text-gray-400" />
+    <div className="flex items-center gap-2 rounded-t-lg bg-white/[0.02] px-3 py-1.5">
+      <Icon className="size-3.5 text-[#71717a]" />
       <span
         className="text-xs font-semibold tracking-wide uppercase"
-        style={{ color: accent || "#b5bac1" }}
+        style={{ color: accent || "#a1a1aa" }}
       >
         {label}
       </span>
@@ -40,7 +40,7 @@ export function ComponentHeader({
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-gray-400 hover:text-gray-100"
+            className="text-[#52525b] hover:text-[#e4e4e7]"
             onClick={onMoveUp}
           >
             <ChevronUp className="size-3.5" />
@@ -50,7 +50,7 @@ export function ComponentHeader({
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-gray-400 hover:text-gray-100"
+            className="text-[#52525b] hover:text-[#e4e4e7]"
             onClick={onMoveDown}
           >
             <ChevronDown className="size-3.5" />
@@ -60,7 +60,7 @@ export function ComponentHeader({
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-gray-400 hover:text-red-400"
+            className="text-[#52525b] hover:text-red-400"
             onClick={onDelete}
           >
             <Trash2 className="size-3.5" />
@@ -80,7 +80,7 @@ export function ComponentCard({
 }) {
   return (
     <div
-      className="overflow-hidden rounded-lg border border-[#3f4147]/60 bg-[#2b2d31]"
+      className="overflow-hidden rounded-lg border border-white/[0.06] bg-[#111113]"
       style={
         borderColor
           ? { borderLeftWidth: 3, borderLeftColor: borderColor }
@@ -102,11 +102,11 @@ export function FieldRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <div className="flex items-baseline gap-2">
-        <span className="text-xs font-medium text-gray-300">{label}</span>
+        <span className="text-xs font-medium text-[#a1a1aa]">{label}</span>
         {hint && (
-          <span className="text-[10px] text-gray-500">{hint}</span>
+          <span className="text-[10px] text-[#52525b]">{hint}</span>
         )}
       </div>
       {children}
