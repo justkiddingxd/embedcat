@@ -134,6 +134,7 @@ function HomeContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [currentSavedId, setCurrentSavedId] = useState<string | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -147,9 +148,11 @@ function HomeContent() {
     loadedRef.current = true;
     fetch(`/api/embeds/${id}`)
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((data: SavedEmbedItem) => {
+      .then((data: SavedEmbedItem & { userId?: string }) => {
         if (data.mode && data.payload) {
           loadFromPayload(data.mode as "classic" | "components_v2", data.payload);
+          const uid = (session?.user as { id?: string } | undefined)?.id;
+          if (uid && data.userId === uid) setCurrentSavedId(id);
         }
       })
       .catch(() => { void 0; });
@@ -187,11 +190,22 @@ function HomeContent() {
     setSaveStatus("saving");
     try {
       const payload = buildCurrentPayload();
-      await fetch("/api/embeds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: true }),
-      });
+      if (currentSavedId) {
+        await fetch(`/api/embeds/${currentSavedId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, payload }),
+        });
+      } else {
+        const res = await fetch("/api/embeds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: true }),
+        });
+        const data = (await res.json()) as { id: string };
+        setCurrentSavedId(data.id);
+        router.replace(`?id=${data.id}`);
+      }
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch { void 0; setSaveStatus("idle"); }
@@ -236,6 +250,7 @@ function HomeContent() {
 
   const handleLoadSaved = (item: SavedEmbedItem) => {
     loadFromPayload(item.mode as "classic" | "components_v2", item.payload);
+    setCurrentSavedId(item.id);
     router.replace(`?id=${item.id}`);
     setSavedOpen(false);
   };
@@ -354,7 +369,7 @@ function HomeContent() {
                     </DialogClose>
                     <DialogClose
                       className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-red-500/80 text-white hover:bg-red-500 transition-colors"
-                      onClick={reset}
+                      onClick={() => { reset(); setCurrentSavedId(null); router.replace("/"); }}
                     >
                       Delete
                     </DialogClose>
