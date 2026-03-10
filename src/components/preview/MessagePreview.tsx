@@ -109,6 +109,8 @@ type MarkdownNode =
   | { type: "text"; value: string }
   | { type: "bold"; children: MarkdownNode[] }
   | { type: "italic"; children: MarkdownNode[] }
+  | { type: "underline"; children: MarkdownNode[] }
+  | { type: "strikethrough"; children: MarkdownNode[] }
   | { type: "code"; value: string }
   | { type: "spoiler"; children: MarkdownNode[] }
   | { type: "link"; text: string; url: string }
@@ -120,7 +122,7 @@ type MarkdownNode =
 function parseInlineMarkdown(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = [];
   const regex =
-    /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)|<@!?(\d{17,20})>|<@&(\d{17,20})>|<#(\d{17,20})>|<(a?):(\w+):(\d{17,20})>/g;
+    /__(.+?)__|~~(.+?)~~|\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)|<@!?(\d{17,20})>|<@&(\d{17,20})>|<#(\d{17,20})>|<(a?):(\w+):(\d{17,20})>/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -129,23 +131,27 @@ function parseInlineMarkdown(text: string): MarkdownNode[] {
       nodes.push({ type: "text", value: text.slice(lastIndex, match.index) });
     }
     if (match[1] !== undefined) {
-      nodes.push({ type: "bold", children: [{ type: "text", value: match[1] }] });
+      nodes.push({ type: "underline", children: [{ type: "text", value: match[1] }] });
     } else if (match[2] !== undefined) {
-      nodes.push({ type: "italic", children: [{ type: "text", value: match[2] }] });
+      nodes.push({ type: "strikethrough", children: [{ type: "text", value: match[2] }] });
     } else if (match[3] !== undefined) {
-      nodes.push({ type: "code", value: match[3] });
+      nodes.push({ type: "bold", children: [{ type: "text", value: match[3] }] });
     } else if (match[4] !== undefined) {
-      nodes.push({ type: "spoiler", children: [{ type: "text", value: match[4] }] });
-    } else if (match[5] !== undefined && match[6] !== undefined) {
-      nodes.push({ type: "link", text: match[5], url: match[6] });
-    } else if (match[7] !== undefined) {
-      nodes.push({ type: "user_mention", id: match[7] });
-    } else if (match[8] !== undefined) {
-      nodes.push({ type: "role_mention", id: match[8] });
+      nodes.push({ type: "italic", children: [{ type: "text", value: match[4] }] });
+    } else if (match[5] !== undefined) {
+      nodes.push({ type: "code", value: match[5] });
+    } else if (match[6] !== undefined) {
+      nodes.push({ type: "spoiler", children: [{ type: "text", value: match[6] }] });
+    } else if (match[7] !== undefined && match[8] !== undefined) {
+      nodes.push({ type: "link", text: match[7], url: match[8] });
     } else if (match[9] !== undefined) {
-      nodes.push({ type: "channel_mention", id: match[9] });
-    } else if (match[11] !== undefined && match[12] !== undefined) {
-      nodes.push({ type: "custom_emoji", name: match[11], id: match[12], animated: match[10] === "a" });
+      nodes.push({ type: "user_mention", id: match[9] });
+    } else if (match[10] !== undefined) {
+      nodes.push({ type: "role_mention", id: match[10] });
+    } else if (match[11] !== undefined) {
+      nodes.push({ type: "channel_mention", id: match[11] });
+    } else if (match[13] !== undefined && match[14] !== undefined) {
+      nodes.push({ type: "custom_emoji", name: match[13], id: match[14], animated: match[12] === "a" });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -173,6 +179,18 @@ function RenderInline({ nodes }: { nodes: MarkdownNode[] }) {
               <em key={i}>
                 <RenderInline nodes={node.children} />
               </em>
+            );
+          case "underline":
+            return (
+              <u key={i} className="underline">
+                <RenderInline nodes={node.children} />
+              </u>
+            );
+          case "strikethrough":
+            return (
+              <s key={i} className="line-through">
+                <RenderInline nodes={node.children} />
+              </s>
             );
           case "code":
             return (
@@ -222,44 +240,91 @@ function RenderInline({ nodes }: { nodes: MarkdownNode[] }) {
 
 function renderMarkdown(text: string): React.ReactNode {
   const lines = text.split("\n");
-  return lines.map((line, i) => {
-    if (line.startsWith("### ")) {
-      return (
-        <div key={i} className="text-sm font-bold text-[#f2f3f5] leading-relaxed">
-          <RenderInline nodes={parseInlineMarkdown(line.slice(4))} />
+  const result: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (line.startsWith(">>> ")) {
+      const quoteLines = [line.slice(4), ...lines.slice(i + 1)];
+      result.push(
+        <div key={i} className="flex leading-[1.375rem]">
+          <div className="w-1 rounded-[4px] bg-[#4e5058] mr-3 shrink-0" />
+          <div>{renderMarkdownLines(quoteLines)}</div>
         </div>
       );
+      i = lines.length;
+      continue;
     }
-    if (line.startsWith("## ")) {
-      return (
-        <div key={i} className="text-base font-bold text-[#f2f3f5] leading-relaxed">
-          <RenderInline nodes={parseInlineMarkdown(line.slice(3))} />
+
+    if (line.startsWith("> ")) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].startsWith("> ")) {
+        quoteLines.push(lines[i].slice(2));
+        i++;
+      }
+      result.push(
+        <div key={`q-${i}`} className="flex leading-[1.375rem]">
+          <div className="w-1 rounded-[4px] bg-[#4e5058] mr-3 shrink-0" />
+          <div>{renderMarkdownLines(quoteLines)}</div>
         </div>
       );
+      continue;
     }
-    if (line.startsWith("# ")) {
-      return (
-        <div key={i} className="text-xl font-bold text-[#f2f3f5] leading-relaxed">
-          <RenderInline nodes={parseInlineMarkdown(line.slice(2))} />
-        </div>
-      );
-    }
-    if (line.startsWith("-# ")) {
-      return (
-        <div key={i} className="text-xs text-[#949ba4] leading-relaxed">
-          <RenderInline nodes={parseInlineMarkdown(line.slice(3))} />
-        </div>
-      );
-    }
-    if (line === "") {
-      return <br key={i} />;
-    }
+
+    result.push(renderSingleLine(line, i));
+    i++;
+  }
+
+  return result;
+}
+
+function renderSingleLine(line: string, key: number): React.ReactNode {
+  if (line.startsWith("### ")) {
     return (
-      <div key={i} className="leading-[1.375rem]">
-        <RenderInline nodes={parseInlineMarkdown(line)} />
+      <div key={key} className="text-sm font-bold text-[#f2f3f5] leading-relaxed">
+        <RenderInline nodes={parseInlineMarkdown(line.slice(4))} />
       </div>
     );
-  });
+  }
+  if (line.startsWith("## ")) {
+    return (
+      <div key={key} className="text-base font-bold text-[#f2f3f5] leading-relaxed">
+        <RenderInline nodes={parseInlineMarkdown(line.slice(3))} />
+      </div>
+    );
+  }
+  if (line.startsWith("# ")) {
+    return (
+      <div key={key} className="text-xl font-bold text-[#f2f3f5] leading-relaxed">
+        <RenderInline nodes={parseInlineMarkdown(line.slice(2))} />
+      </div>
+    );
+  }
+  if (line.startsWith("-# ")) {
+    return (
+      <div key={key} className="text-xs text-[#949ba4] leading-relaxed">
+        <RenderInline nodes={parseInlineMarkdown(line.slice(3))} />
+      </div>
+    );
+  }
+  if (line === "") {
+    return <br key={key} />;
+  }
+  return (
+    <div key={key} className="leading-[1.375rem]">
+      <RenderInline nodes={parseInlineMarkdown(line)} />
+    </div>
+  );
+}
+
+function renderMarkdownLines(lines: string[]): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    result.push(renderSingleLine(lines[i], i));
+  }
+  return result;
 }
 
 function EmbedCard({ embed }: { embed: DiscordEmbed }) {
