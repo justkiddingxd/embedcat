@@ -60,18 +60,14 @@ export default function DocsPage() {
   return (
     <div className="min-h-screen bg-[#09090b]">
       <header className="sticky top-0 z-50 flex h-10 items-center justify-between border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-md px-4">
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 text-[11px] font-medium text-[#71717a] hover:text-white transition-colors"
-        >
-          <ArrowLeft className="size-3" />
-          {t.docs.backToEditor}
-        </Link>
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5">
-          <Cat className="size-4 text-[#5865f2]" />
-          <span className="text-xs font-bold tracking-tight text-white">embed.cat</span>
-        </div>
         <div className="flex items-center gap-2.5">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-[#71717a] hover:text-white transition-colors"
+          >
+            <ArrowLeft className="size-3" />
+            {t.docs.backToEditor}
+          </Link>
           <a
             href="https://discord.gg/HvZGEYEgt5"
             target="_blank"
@@ -89,6 +85,11 @@ export default function DocsPage() {
             {locale === "en" ? "RU" : "EN"}
           </button>
         </div>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          <Cat className="size-4 text-[#5865f2]" />
+          <span className="text-xs font-bold tracking-tight text-white">embed.cat</span>
+        </div>
+        <div className="w-8" />
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-10">
