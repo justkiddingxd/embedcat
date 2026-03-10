@@ -31,7 +31,8 @@ export interface EmbedThumbnail {
 }
 
 export interface DiscordEmbed {
-  id: string; // internal ID for React keys
+  id: string;
+  hidden?: boolean;
   title?: string;
   description?: string;
   url?: string;
@@ -74,6 +75,7 @@ export enum ButtonStyle {
 
 export interface ButtonComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.Button;
   style: ButtonStyle;
   label?: string;
@@ -85,12 +87,14 @@ export interface ButtonComponent {
 
 export interface ActionRowComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.ActionRow;
   components: ButtonComponent[];
 }
 
 export interface TextDisplayComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.TextDisplay;
   content: string;
 }
@@ -116,12 +120,14 @@ export interface MediaGalleryItem {
 
 export interface MediaGalleryComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.MediaGallery;
   items: MediaGalleryItem[];
 }
 
 export interface FileComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.File;
   file: UnfurledMediaItem;
   spoiler?: boolean;
@@ -129,6 +135,7 @@ export interface FileComponent {
 
 export interface SeparatorComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.Separator;
   divider: boolean;
   spacing: 1 | 2; // 1 = small, 2 = large
@@ -136,6 +143,7 @@ export interface SeparatorComponent {
 
 export interface SectionComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.Section;
   components: TextDisplayComponent[];
   accessory?: ButtonComponent | ThumbnailComponent;
@@ -151,6 +159,7 @@ export type ContainerChild =
 
 export interface ContainerComponent {
   id: string;
+  hidden?: boolean;
   type: ComponentType.Container;
   accent_color?: number;
   spoiler?: boolean;

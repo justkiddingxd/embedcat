@@ -686,7 +686,7 @@ function RenderContainer({ component }: { component: ContainerComponent }) {
           : undefined
       }
     >
-      {component.components.map((child) => (
+      {component.components.filter((c) => !c.hidden).map((child) => (
         <RenderContainerChild key={child.id} component={child as TopLevelComponent} />
       ))}
     </div>
@@ -726,7 +726,7 @@ export function ClassicPreview({
           {renderMarkdown(content)}
         </div>
       )}
-      {embeds.map((embed) => (
+      {embeds.filter((e) => !e.hidden).map((embed) => (
         <EmbedCard key={embed.id} embed={embed} />
       ))}
     </>
@@ -740,7 +740,7 @@ export function ComponentsV2Preview({
 }) {
   return (
     <>
-      {components.map((component) => (
+      {components.filter((c) => !c.hidden).map((component) => (
         <RenderTopLevel key={component.id} component={component} />
       ))}
     </>

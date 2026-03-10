@@ -75,7 +75,7 @@ function cleanComponent(c: TopLevelComponent | ContainerChild): Record<string, u
       const ct = c as ContainerComponent;
       const result: Record<string, unknown> = {
         type: ct.type,
-        components: ct.components.map(cleanComponent),
+        components: ct.components.filter((ch) => !ch.hidden).map(cleanComponent),
       };
       if (ct.accent_color !== undefined) result.accent_color = ct.accent_color;
       if (ct.spoiler) result.spoiler = ct.spoiler;
@@ -144,7 +144,7 @@ export function buildClassicPayload(
 
   if (content) payload.content = content;
   if (embeds.length > 0) {
-    const cleaned = embeds.map(cleanEmbed).filter((e) => Object.keys(e).length > 0);
+    const cleaned = embeds.filter((e) => !e.hidden).map(cleanEmbed).filter((e) => Object.keys(e).length > 0);
     if (cleaned.length > 0) payload.embeds = cleaned;
   }
   payload.username = webhook.username || "embed.cat";
@@ -159,7 +159,7 @@ export function buildComponentsV2Payload(
 ) {
   const payload: Record<string, unknown> = {
     flags: IS_COMPONENTS_V2,
-    components: components.map(cleanComponent),
+    components: components.filter((c) => !c.hidden).map(cleanComponent),
   };
 
   payload.username = webhook.username || "embed.cat";

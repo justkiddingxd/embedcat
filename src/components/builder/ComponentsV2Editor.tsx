@@ -10,6 +10,8 @@ import {
   ArrowDown,
   Box,
   ChevronDown,
+  Eye,
+  EyeOff,
   GripVertical,
   ImageIcon,
   Layers,
@@ -110,10 +112,12 @@ function ComponentCardHeader({
   index,
   total,
   collapsed,
+  hidden,
   onToggle,
   onMoveUp,
   onMoveDown,
   onDelete,
+  onToggleHidden,
   gripProps,
 }: {
   type: number;
@@ -123,10 +127,12 @@ function ComponentCardHeader({
   index: number;
   total: number;
   collapsed: boolean;
+  hidden?: boolean;
   onToggle: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
+  onToggleHidden?: () => void;
   gripProps?: Record<string, unknown>;
 }) {
   return (
@@ -145,6 +151,19 @@ function ComponentCardHeader({
       </Badge>
       <div className="flex-1" />
       <div className="flex items-center gap-0.5 shrink-0">
+        {onToggleHidden && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleHidden();
+            }}
+            className={`transition-colors ${hidden ? "text-[#52525b] opacity-50" : "text-[#52525b] hover:text-[#a1a1aa]"}`}
+          >
+            {hidden ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon-xs"
@@ -197,7 +216,7 @@ function ContainerChildCard({
   gripProps?: Record<string, unknown>;
 }) {
   const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-child-${child.id}`, false);
-  const { updateComponent } = useBuilderStore();
+  const { updateComponent, toggleComponentHidden } = useBuilderStore();
   const { t } = useLocale();
   const TYPE_META = getTypeMeta(t);
 
@@ -238,7 +257,7 @@ function ContainerChildCard({
   };
 
   return (
-    <div className="rounded-md border border-white/[0.04] bg-white/[0.02] overflow-hidden" {...dragProps}>
+    <div className={`rounded-md border border-white/[0.04] bg-white/[0.02] overflow-hidden${child.hidden ? " opacity-50" : ""}`} {...dragProps}>
       <ComponentCardHeader
         type={child.type}
         label={meta.label}
@@ -247,10 +266,12 @@ function ContainerChildCard({
         index={index}
         total={total}
         collapsed={collapsed}
+        hidden={child.hidden}
         onToggle={toggleCollapsed}
         onMoveUp={() => moveChild("up")}
         onMoveDown={() => moveChild("down")}
         onDelete={removeChild}
+        onToggleHidden={() => toggleComponentHidden(child.id)}
         gripProps={gripProps}
       />
       {!collapsed && (
@@ -484,7 +505,7 @@ function TopLevelCard({
   gripProps: Record<string, unknown>;
 }) {
   const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-${component.id}`, false);
-  const { removeComponent, moveComponent, updateComponent } =
+  const { removeComponent, moveComponent, updateComponent, toggleComponentHidden } =
     useBuilderStore();
   const { t } = useLocale();
   const TYPE_META = getTypeMeta(t);
@@ -505,7 +526,7 @@ function TopLevelCard({
   };
 
   return (
-    <div className="rounded-lg bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
+    <div className={`rounded-lg bg-[#111113] border border-white/[0.06] overflow-hidden${component.hidden ? " opacity-50" : ""}`} {...dragProps}>
       {accentColor && (
         <div
           className="h-1 w-full"
@@ -520,10 +541,12 @@ function TopLevelCard({
         index={index}
         total={total}
         collapsed={collapsed}
+        hidden={component.hidden}
         onToggle={toggleCollapsed}
         onMoveUp={() => moveComponent(component.id, "up")}
         onMoveDown={() => moveComponent(component.id, "down")}
         onDelete={() => removeComponent(component.id)}
+        onToggleHidden={() => toggleComponentHidden(component.id)}
         gripProps={gripProps}
       />
       {!collapsed && (

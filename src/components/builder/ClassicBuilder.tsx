@@ -6,6 +6,8 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Eye,
+  EyeOff,
   GripVertical,
   Plus,
 } from "lucide-react";
@@ -33,7 +35,7 @@ function EmbedCard({
   gripProps: Record<string, unknown>;
 }) {
   const [collapsed, toggleCollapsed] = usePersistedCollapse(`embed-${embed.id}`, false);
-  const { removeEmbed, duplicateEmbed, moveEmbed } = useBuilderStore();
+  const { removeEmbed, duplicateEmbed, moveEmbed, toggleEmbedHidden } = useBuilderStore();
   const store = useBuilderStore();
   const fullEmbed = store.embeds.find((e) => e.id === embed.id)!;
 
@@ -42,7 +44,7 @@ function EmbedCard({
   const titlePreview = embed.title?.slice(0, 40) || t.classic.untitledEmbed;
 
   return (
-    <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
+    <div className={`rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden ${fullEmbed.hidden ? "opacity-50" : ""}`} {...dragProps}>
       <div
         className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer select-none"
         onClick={toggleCollapsed}
@@ -62,6 +64,17 @@ function EmbedCard({
           <span className="text-xs text-[#e4e4e7] truncate">{titlePreview}</span>
         </div>
         <div className="flex items-center gap-0 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleEmbedHidden(embed.id);
+            }}
+            className={`transition-colors ${fullEmbed.hidden ? "text-[#52525b] opacity-50" : "text-[#52525b] hover:text-[#a1a1aa]"}`}
+          >
+            {fullEmbed.hidden ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+          </Button>
           <Button
             variant="ghost"
             size="icon-xs"

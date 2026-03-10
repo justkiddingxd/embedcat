@@ -241,6 +241,9 @@ interface BuilderState {
   moveField: (embedId: string, fieldId: string, direction: "up" | "down") => void;
   reorderFields: (embedId: string, fromIndex: number, toIndex: number) => void;
 
+  toggleEmbedHidden: (id: string) => void;
+  toggleComponentHidden: (id: string) => void;
+
   addComponent: (component: TopLevelComponent) => void;
   removeComponent: (id: string) => void;
   updateComponent: (id: string, updater: (c: TopLevelComponent) => TopLevelComponent) => void;
@@ -384,6 +387,30 @@ export const useBuilderStore = create<BuilderState>()(
         return { ...e, fields };
       }),
     })),
+
+  toggleEmbedHidden: (id) =>
+    set((s) => ({
+      embeds: s.embeds.map((e) =>
+        e.id === id ? { ...e, hidden: !e.hidden } : e
+      ),
+    })),
+
+  toggleComponentHidden: (id) =>
+    set((s) => {
+      const toggleInChildren = (items: TopLevelComponent[]): TopLevelComponent[] =>
+        items.map((c) => {
+          if (c.id === id) return { ...c, hidden: !c.hidden } as TopLevelComponent;
+          if (c.type === 17) {
+            const ct = c as ContainerComponent;
+            const updated = ct.components.map((child) =>
+              child.id === id ? { ...child, hidden: !child.hidden } : child
+            );
+            if (updated !== ct.components) return { ...ct, components: updated } as TopLevelComponent;
+          }
+          return c;
+        });
+      return { components: toggleInChildren(s.components) };
+    }),
 
   addComponent: (component) =>
     set((s) => ({ components: [...s.components, component] })),
