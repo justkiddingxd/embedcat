@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ButtonEditor } from "./ButtonEditor";
@@ -17,6 +18,7 @@ export function ActionRowEditor({
   component,
   onChange,
 }: ActionRowEditorProps) {
+  const { t } = useLocale();
   const buttons = component.components;
 
   const updateButton = (idx: number, updates: Partial<ButtonComponent>) => {
@@ -39,7 +41,7 @@ export function ActionRowEditor({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs text-[#71717a]">
-          Buttons
+          {t.v2.buttons}
           <Badge
             variant="secondary"
             className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
@@ -55,7 +57,7 @@ export function ActionRowEditor({
           className="text-[#5865f2] hover:text-[#7983f5] hover:bg-[#5865f2]/10 text-xs gap-1"
         >
           <Plus className="size-3" />
-          Add
+          {t.v2.add}
         </Button>
       </div>
 

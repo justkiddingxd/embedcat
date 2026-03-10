@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 interface ConfirmDeleteButtonProps {
   onConfirm: () => void;
@@ -11,6 +12,7 @@ interface ConfirmDeleteButtonProps {
 }
 
 export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButtonProps) {
+  const { t } = useLocale();
   const [confirming, setConfirming] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,7 +65,7 @@ export function ConfirmDeleteButton({ onConfirm, className }: ConfirmDeleteButto
             animation: "confirmFadeIn 150ms ease-out",
           }}
         >
-          You sure?
+          {t.confirm.youSure}
         </div>,
         document.body
       )}

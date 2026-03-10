@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
+import type { Dict } from "@/lib/i18n/locale-context";
 import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import { ColorPicker } from "./ColorPicker";
 import {
@@ -60,41 +62,40 @@ import { SeparatorEditor } from "./v2/SeparatorEditor";
 import { ActionRowEditor } from "./v2/ActionRowEditor";
 import { MediaGalleryEditor } from "./v2/MediaGalleryEditor";
 
-const TYPE_META: Record<
-  number,
-  { label: string; color: string; icon: React.ReactNode }
-> = {
-  [ComponentType.Container]: {
-    label: "Container",
-    color: "#5865f2",
-    icon: <Box className="size-3" />,
-  },
-  [ComponentType.TextDisplay]: {
-    label: "Text Display",
-    color: "#57f287",
-    icon: <Type className="size-3" />,
-  },
-  [ComponentType.Section]: {
-    label: "Section",
-    color: "#fee75c",
-    icon: <SplitSquareHorizontal className="size-3" />,
-  },
-  [ComponentType.Separator]: {
-    label: "Separator",
-    color: "#9b59b6",
-    icon: <Minus className="size-3" />,
-  },
-  [ComponentType.ActionRow]: {
-    label: "Action Row",
-    color: "#eb459e",
-    icon: <MousePointerClick className="size-3" />,
-  },
-  [ComponentType.MediaGallery]: {
-    label: "Media Gallery",
-    color: "#ed4245",
-    icon: <ImageIcon className="size-3" />,
-  },
-};
+function getTypeMeta(t: Dict): Record<number, { label: string; color: string; icon: React.ReactNode }> {
+  return {
+    [ComponentType.Container]: {
+      label: t.v2.container,
+      color: "#5865f2",
+      icon: <Box className="size-3" />,
+    },
+    [ComponentType.TextDisplay]: {
+      label: t.v2.textDisplay,
+      color: "#57f287",
+      icon: <Type className="size-3" />,
+    },
+    [ComponentType.Section]: {
+      label: t.v2.section,
+      color: "#fee75c",
+      icon: <SplitSquareHorizontal className="size-3" />,
+    },
+    [ComponentType.Separator]: {
+      label: t.v2.separator,
+      color: "#9b59b6",
+      icon: <Minus className="size-3" />,
+    },
+    [ComponentType.ActionRow]: {
+      label: t.v2.actionRow,
+      color: "#eb459e",
+      icon: <MousePointerClick className="size-3" />,
+    },
+    [ComponentType.MediaGallery]: {
+      label: t.v2.mediaGallery,
+      color: "#ed4245",
+      icon: <ImageIcon className="size-3" />,
+    },
+  };
+}
 
 function intToHex(color: number): string {
   return `#${color.toString(16).padStart(6, "0")}`;
@@ -197,6 +198,8 @@ function ContainerChildCard({
 }) {
   const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-child-${child.id}`, false);
   const { updateComponent } = useBuilderStore();
+  const { t } = useLocale();
+  const TYPE_META = getTypeMeta(t);
 
   const meta = TYPE_META[child.type] ?? {
     label: "Unknown",
@@ -313,6 +316,7 @@ function AddChildButton({
   containerId: string;
 }) {
   const { updateComponent } = useBuilderStore();
+  const { t } = useLocale();
 
   const addChild = (type: string | null) => {
     if (!type) return;
@@ -336,38 +340,38 @@ function AddChildButton({
       <SelectTrigger className="w-full h-8 border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#a1a1aa] hover:border-white/[0.12] text-xs transition-colors">
         <div className="flex items-center gap-1.5">
           <Plus className="size-3" />
-          <span>Add Child Component</span>
+          <span>{t.v2.addChildComponent}</span>
         </div>
       </SelectTrigger>
       <SelectContent className="border-white/[0.08] bg-[#111113]">
         <SelectItem value="text" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <Type className="size-3 text-[#57f287]" />
-            Text Display
+            {t.v2.textDisplay}
           </span>
         </SelectItem>
         <SelectItem value="section" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <SplitSquareHorizontal className="size-3 text-[#fee75c]" />
-            Section
+            {t.v2.section}
           </span>
         </SelectItem>
         <SelectItem value="separator" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <Minus className="size-3 text-[#9b59b6]" />
-            Separator
+            {t.v2.separator}
           </span>
         </SelectItem>
         <SelectItem value="actionrow" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <MousePointerClick className="size-3 text-[#eb459e]" />
-            Action Row
+            {t.v2.actionRow}
           </span>
         </SelectItem>
         <SelectItem value="mediagallery" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <ImageIcon className="size-3 text-[#ed4245]" />
-            Media Gallery
+            {t.v2.mediaGallery}
           </span>
         </SelectItem>
       </SelectContent>
@@ -382,6 +386,7 @@ function ContainerEditor({
   component: ContainerComponent;
   onChange: (updater: (c: TopLevelComponent) => TopLevelComponent) => void;
 }) {
+  const { t } = useLocale();
   const reorderChildren = useCallback(
     (from: number, to: number) => {
       onChange((c) => {
@@ -403,7 +408,7 @@ function ContainerEditor({
       <div className="flex items-center gap-3">
         <div className="space-y-1">
           <Label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
-            Accent Color
+            {t.v2.accentColor}
           </Label>
           <ColorPicker
             color={component.accent_color ?? 0x5865f2}
@@ -428,7 +433,7 @@ function ContainerEditor({
             size="sm"
           />
           <Label className="text-xs text-[#71717a] cursor-pointer">
-            Spoiler
+            {t.v2.spoiler}
           </Label>
         </div>
       </div>
@@ -437,7 +442,7 @@ function ContainerEditor({
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#71717a] flex items-center gap-1.5">
             <Layers className="size-3" />
-            Children
+            {t.v2.children}
             <Badge
               variant="secondary"
               className="bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
@@ -481,6 +486,8 @@ function TopLevelCard({
   const [collapsed, toggleCollapsed] = usePersistedCollapse(`v2-${component.id}`, false);
   const { removeComponent, moveComponent, updateComponent } =
     useBuilderStore();
+  const { t } = useLocale();
+  const TYPE_META = getTypeMeta(t);
 
   const meta = TYPE_META[component.type] ?? {
     label: "Unknown",
@@ -545,6 +552,7 @@ function TopLevelCard({
 
 function AddTopLevelButton() {
   const { addComponent } = useBuilderStore();
+  const { t } = useLocale();
 
   const addTopLevel = (type: string | null) => {
     if (!type) return;
@@ -566,44 +574,44 @@ function AddTopLevelButton() {
       <SelectTrigger className="w-full h-9 border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 transition-colors text-sm">
         <div className="flex items-center gap-1.5">
           <Plus className="size-3.5" />
-          <span>Add Component</span>
+          <span>{t.v2.addComponent}</span>
         </div>
       </SelectTrigger>
       <SelectContent className="border-white/[0.08] bg-[#111113]">
         <SelectItem value="container" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <Box className="size-3 text-[#5865f2]" />
-            Container
+            {t.v2.container}
           </span>
         </SelectItem>
         <SelectItem value="text" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <Type className="size-3 text-[#57f287]" />
-            Text Display
+            {t.v2.textDisplay}
           </span>
         </SelectItem>
         <SelectItem value="section" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <SplitSquareHorizontal className="size-3 text-[#fee75c]" />
-            Section
+            {t.v2.section}
           </span>
         </SelectItem>
         <SelectItem value="separator" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <Minus className="size-3 text-[#9b59b6]" />
-            Separator
+            {t.v2.separator}
           </span>
         </SelectItem>
         <SelectItem value="actionrow" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <MousePointerClick className="size-3 text-[#eb459e]" />
-            Action Row
+            {t.v2.actionRow}
           </span>
         </SelectItem>
         <SelectItem value="mediagallery" className="text-[#e4e4e7] text-xs">
           <span className="flex items-center gap-2">
             <ImageIcon className="size-3 text-[#ed4245]" />
-            Media Gallery
+            {t.v2.mediaGallery}
           </span>
         </SelectItem>
       </SelectContent>
@@ -614,13 +622,14 @@ function AddTopLevelButton() {
 export function ComponentsV2Editor() {
   const components = useBuilderStore((s) => s.components);
   const reorderComponents = useBuilderStore((s) => s.reorderComponents);
+  const { t } = useLocale();
   const { getDragProps, getGripProps, getContainerProps } = useDragReorder(useCallback((from: number, to: number) => reorderComponents(from, to), [reorderComponents]));
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <Label className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#a1a1aa]">
-          Components
+          {t.v2.components}
         </Label>
         <span className="text-[11px] tabular-nums font-mono text-[#3f3f46]">
           {components.length}/{LIMITS.COMPONENTS_MAX}

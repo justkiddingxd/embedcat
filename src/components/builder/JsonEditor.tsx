@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useBuilderStore } from "@/store/builder-store";
+import { useLocale } from "@/lib/i18n/locale-context";
 import {
   buildClassicPayload,
   buildComponentsV2Payload,
@@ -28,6 +29,7 @@ const FORMAT_LABELS: Record<JsonFormat, string> = {
 
 export function JsonEditor() {
   const store = useBuilderStore();
+  const { t } = useLocale();
   const { mode, content, embeds, components, webhook, jsonEditorOpen, setJsonEditorOpen, importFromJson } = store;
   const [jsonText, setJsonText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -83,22 +85,22 @@ export function JsonEditor() {
         if (Object.keys(embed).length > 0) converted.embeds = [embed];
         const success = importFromJson(JSON.stringify(converted));
         if (success) { setImportError(null); setJsonEditorOpen(false); }
-        else setImportError("Failed to import Nadeko format");
+        else setImportError(t.jsonEditor.failedNadeko);
         return;
       }
 
       if (format === "discohook" && mode === "classic") {
         const success = importFromJson(JSON.stringify(data));
         if (success) { setImportError(null); setJsonEditorOpen(false); }
-        else setImportError("Failed to import Discohook format");
+        else setImportError(t.jsonEditor.failedDiscohook);
         return;
       }
 
       const success = importFromJson(jsonText);
       if (success) { setImportError(null); setJsonEditorOpen(false); }
-      else setImportError("Invalid JSON format");
+      else setImportError(t.jsonEditor.invalidFormat);
     } catch {
-      setImportError("Invalid JSON");
+      setImportError(t.jsonEditor.invalidJson);
     }
   };
 
@@ -114,7 +116,7 @@ export function JsonEditor() {
       </DialogTrigger>
       <DialogContent className="max-w-3xl border-white/[0.08] bg-[#111113] text-[#fafafa]">
         <DialogHeader>
-          <DialogTitle className="text-[#fafafa]">JSON Editor</DialogTitle>
+          <DialogTitle className="text-[#fafafa]">{t.jsonEditor.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {showFormatTabs && (
@@ -154,7 +156,7 @@ export function JsonEditor() {
               className="gap-2 border-white/[0.06] text-[#a1a1aa] hover:bg-white/[0.04] transition-colors"
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? t.jsonEditor.copied : t.jsonEditor.copy}
             </Button>
             <Button
               size="sm"
@@ -162,7 +164,7 @@ export function JsonEditor() {
               className="gap-2 bg-[#5865f2] text-white hover:bg-[#4752c4] transition-colors"
             >
               <Upload className="size-4" />
-              Import
+              {t.jsonEditor.import}
             </Button>
           </div>
         </div>

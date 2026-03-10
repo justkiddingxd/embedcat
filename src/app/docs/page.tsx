@@ -137,8 +137,9 @@ export default function DocsPage() {
 
           <SectionCard icon={<Palette className="size-4 text-[#5865f2]" />} title="Markdown & Formatting">
             <p>
-              Discord embeds support a subset of markdown. Select text in any description field to see the floating toolbar.
+              Discord embeds support a subset of markdown. <strong className="text-[#e4e4e7]">Select text</strong> in any description or text field to bring up the floating markdown toolbar — quickly apply bold, italic, strikethrough, code, and links without typing syntax.
             </p>
+            <p className="font-medium text-[#e4e4e7]">Basic formatting:</p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
               <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">**bold**</code> — <strong className="text-[#e4e4e7]">bold</strong></li>
               <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">*italic*</code> — <em className="text-[#e4e4e7]">italic</em></li>
@@ -147,11 +148,18 @@ export default function DocsPage() {
               <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">[text](url)</code> — hyperlink</li>
               <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]"># Heading</code>, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">## Heading</code>, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">### Heading</code></li>
             </ul>
+            <p className="font-medium text-[#e4e4e7]">Quotes & subtext:</p>
+            <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
+              <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"> quote"}</code> — single-line blockquote</li>
+              <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{">>> quote"}</code> — multi-line blockquote (everything below becomes a quote)</li>
+              <li><code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"-# small text"}</code> — <span className="text-[11px] text-[#71717a]">small gray subtext</span></li>
+            </ul>
+            <p className="font-medium text-[#e4e4e7]">Mentions & emoji:</p>
             <p>
-              Mentions: <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<@userId>"}</code>, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<@&roleId>"}</code>, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<#channelId>"}</code>
+              <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<@userId>"}</code> user, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<@&roleId>"}</code> role, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<#channelId>"}</code> channel
             </p>
             <p>
-              Emoji: <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<:name:id>"}</code> or <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<a:name:id>"}</code> for animated
+              <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<:name:id>"}</code> custom emoji, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<a:name:id>"}</code> animated emoji
             </p>
           </SectionCard>
 

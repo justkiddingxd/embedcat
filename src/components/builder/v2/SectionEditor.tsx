@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MarkdownTextarea } from "../MarkdownTextarea";
@@ -28,6 +29,7 @@ interface SectionEditorProps {
 }
 
 export function SectionEditor({ component, onChange }: SectionEditorProps) {
+  const { t } = useLocale();
   const texts = component.components;
   const accessory = component.accessory;
 
@@ -77,7 +79,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#71717a]">
-            Text Content
+            {t.v2.textContent}
             <Badge
               variant="secondary"
               className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
@@ -93,7 +95,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
             className="text-[#5865f2] hover:text-[#7983f5] hover:bg-[#5865f2]/10 text-xs gap-1"
           >
             <Plus className="size-3" />
-            Add
+            {t.v2.add}
           </Button>
         </div>
 
@@ -102,7 +104,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
             <MarkdownTextarea
               value={td.content}
               onValueChange={(v) => updateText(idx, v)}
-              placeholder="Section text..."
+              placeholder={t.v2.sectionPlaceholder}
               className="min-h-12 pr-7 bg-[#0a0a0b] border-white/[0.06] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
             />
             {texts.length > 1 && (
@@ -119,20 +121,20 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
 
       <div className="border-t border-white/[0.04] pt-2 space-y-1.5">
         <div className="flex items-center gap-3">
-          <label className="text-xs text-[#71717a] shrink-0">Accessory</label>
+          <label className="text-xs text-[#71717a] shrink-0">{t.v2.accessory}</label>
           <Select value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
             <SelectTrigger className="h-7 w-32 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-white/[0.08] bg-[#111113]">
               <SelectItem value="none" className="text-[#e4e4e7] text-xs">
-                None
+                {t.v2.none}
               </SelectItem>
               <SelectItem value="button" className="text-[#e4e4e7] text-xs">
-                Button
+                {t.v2.button}
               </SelectItem>
               <SelectItem value="thumbnail" className="text-[#e4e4e7] text-xs">
-                Thumbnail
+                {t.v2.thumbnail}
               </SelectItem>
             </SelectContent>
           </Select>

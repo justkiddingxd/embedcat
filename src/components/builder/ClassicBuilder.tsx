@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import {
   ChevronDown,
@@ -37,7 +38,8 @@ function EmbedCard({
   const fullEmbed = store.embeds.find((e) => e.id === embed.id)!;
 
   const colorHex = `#${(embed.color ?? 0x5865f2).toString(16).padStart(6, "0")}`;
-  const titlePreview = embed.title?.slice(0, 40) || "Untitled embed";
+  const { t } = useLocale();
+  const titlePreview = embed.title?.slice(0, 40) || t.classic.untitledEmbed;
 
   return (
     <div className="rounded-md bg-[#111113] border border-white/[0.06] overflow-hidden" {...dragProps}>
@@ -116,6 +118,7 @@ function EmbedCard({
 
 export function ClassicBuilder() {
   const { content, setContent, embeds, addEmbed, reorderEmbeds } = useBuilderStore();
+  const { t } = useLocale();
   const { getDragProps, getGripProps, getContainerProps } = useDragReorder(reorderEmbeds);
 
   return (
@@ -123,7 +126,7 @@ export function ClassicBuilder() {
       <div className="rounded-md bg-[#111113] border border-white/[0.06] p-2 space-y-1">
         <div className="flex items-center justify-between">
           <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
-            Content
+            {t.classic.content}
           </Label>
           <span
             className={`text-[10px] tabular-nums font-mono ${
@@ -140,7 +143,7 @@ export function ClassicBuilder() {
         <MarkdownTextarea
           value={content}
           onValueChange={setContent}
-          placeholder="Message content"
+          placeholder={t.classic.contentPlaceholder}
           maxLength={LIMITS.CONTENT}
           className="bg-[#0a0a0b] border-white/[0.06] text-[#fafafa] placeholder:text-[#3f3f46] text-xs min-h-[48px]"
         />
@@ -149,7 +152,7 @@ export function ClassicBuilder() {
       <div className="space-y-1">
         <div className="flex items-center justify-between px-0.5">
           <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#a1a1aa]">
-            Embeds
+            {t.classic.embeds}
           </Label>
           <span className="text-[10px] tabular-nums font-mono text-[#3f3f46]">
             {embeds.length}/{LIMITS.EMBEDS_PER_MESSAGE}
@@ -177,7 +180,7 @@ export function ClassicBuilder() {
             className="h-7 w-full border-dashed border-white/[0.08] text-[11px] text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 bg-transparent transition-colors"
           >
             <Plus className="size-3" />
-            Add Embed
+            {t.classic.addEmbed}
           </Button>
         )}
       </div>

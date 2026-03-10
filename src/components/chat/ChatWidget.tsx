@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Bot, X, Send, List, Plus, Trash2, Check, Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useBuilderStore } from "@/store/builder-store";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
 import type { BuilderMode } from "@/types/discord";
@@ -122,6 +123,7 @@ function extractEmbedJsonBlocks(content: string): string[] {
 
 export function ChatWidget() {
   const { data: authSession } = useSession();
+  const { t } = useLocale();
   const { mode, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -387,15 +389,15 @@ export function ChatWidget() {
           try {
             const errData = await res.json() as { error?: string };
             if (res.status === 429) {
-              setError("Daily limit reached (5/day)");
+              setError(t.chat.dailyLimitError);
               setRateLimited(true);
             } else if (res.status === 401) {
-              setError("Sign in to use AI chat");
+              setError(t.chat.signInError);
             } else {
-              setError(errData.error || "Something went wrong");
+              setError(errData.error || t.chat.somethingWentWrong);
             }
           } catch {
-            setError("Something went wrong");
+            setError(t.chat.somethingWentWrong);
           }
           setIsStreaming(false);
           return;
@@ -462,7 +464,7 @@ export function ChatWidget() {
           )
         );
       } catch {
-        setError("Failed to send message");
+        setError(t.chat.failedToSend);
         setMessages((prev) => prev.filter((m) => m.id !== aiMsg.id));
       } finally {
         setIsStreaming(false);
@@ -502,7 +504,7 @@ export function ChatWidget() {
       {showHint && !isOpen && (
         <div className="fixed bottom-[78px] right-[18px] z-50 animate-fade-in-hint pointer-events-none">
           <div className="relative bg-[#5865f2] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg shadow-black/30 whitespace-nowrap">
-            let ai make embeds for you
+            {t.chat.letAiHelp}
             <svg className="absolute -bottom-[6px] right-3 text-[#5865f2]" width="12" height="7" viewBox="0 0 12 7" fill="currentColor">
               <path d="M0 0L6 7L12 0H0Z" />
             </svg>
@@ -546,7 +548,7 @@ export function ChatWidget() {
         )}
         <div className="h-10 flex items-center justify-between px-3 border-b border-white/[0.06] shrink-0">
           <span className="text-[13px] font-medium text-[#e4e4e7] tracking-tight">
-            embed.cat AI
+            {t.chat.aiTitle}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -577,13 +579,13 @@ export function ChatWidget() {
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium text-[#5865f2] hover:bg-[#5865f2]/10 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                New Chat
+                {t.chat.newChat}
               </button>
             </div>
             <div className="px-2 pb-2 space-y-0.5">
               {sessions.length === 0 && (
                 <div className="text-center py-8 text-[11px] text-[#71717a]">
-                  No previous chats
+                  {t.chat.noPreviousChats}
                 </div>
               )}
               {sessions.map((s) => (
@@ -615,11 +617,11 @@ export function ChatWidget() {
                       />
                     ) : (
                       <div className="text-[12px] font-medium truncate">
-                        {s.title || "Untitled"}
+                        {s.title || t.chat.untitled}
                       </div>
                     )}
                     <div className="text-[10px] text-[#71717a] mt-0.5">
-                      {formatDate(s.updatedAt)} &middot; {s._count.messages} msgs
+                      {formatDate(s.updatedAt)} &middot; {s._count.messages} {t.chat.msgs}
                     </div>
                   </div>
                   <button
@@ -636,7 +638,7 @@ export function ChatWidget() {
                   <div className="relative shrink-0">
                     {confirmDeleteSessionId === s.id && (
                       <div className="absolute bottom-full right-0 mb-1 z-10 whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400" style={{ animation: "confirmFadeIn 150ms ease-out" }}>
-                        You sure?
+                        {t.chat.youSure}
                       </div>
                     )}
                     <button
@@ -669,7 +671,7 @@ export function ChatWidget() {
                     <Bot className="w-5 h-5 text-[#5865f2]" />
                   </div>
                   <p className="text-[12px] text-[#71717a] leading-relaxed max-w-[240px]">
-                    Ask me to help build Discord embeds, explain fields, or generate embed JSON for you.
+                    {t.chat.aiWelcome}
                   </p>
                 </div>
               )}
@@ -722,10 +724,10 @@ export function ChatWidget() {
                         {appliedBlocks.has(block) ? (
                           <>
                             <Check className="w-3 h-3" />
-                            Applied
+                            {t.chat.applied}
                           </>
                         ) : (
-                          "Apply Embed"
+                          t.chat.applyEmbed
                         )}
                       </button>
                     ))}
@@ -762,10 +764,10 @@ export function ChatWidget() {
                   }}
                   placeholder={
                     !authSession?.user
-                      ? "Sign in to chat..."
+                      ? t.chat.signInToChat
                       : rateLimited
-                        ? "Daily limit reached"
-                        : "Ask about embeds..."
+                        ? t.chat.dailyLimitReached
+                        : t.chat.typeMessage
                   }
                   disabled={isStreaming || !authSession?.user || rateLimited}
                   rows={1}

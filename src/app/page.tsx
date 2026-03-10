@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Header } from "@/components/layout/Header";
 import { ClassicBuilder } from "@/components/builder/ClassicBuilder";
 import { ComponentsV2Editor } from "@/components/builder/ComponentsV2Editor";
@@ -117,7 +118,7 @@ function SavedEmbedPreview({ mode, payload }: { mode: string; payload: Record<st
   );
 }
 
-function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "classic" | "components_v2") => void }) {
+function ModeToggle({ mode, onModeChange, labels }: { mode: string; onModeChange: (m: "classic" | "components_v2") => void; labels: { classic: string; components: string } }) {
   const classicRef = useRef<HTMLButtonElement>(null);
   const componentsRef = useRef<HTMLButtonElement>(null);
   const [pill, setPill] = useState({ left: 0, width: 0 });
@@ -142,7 +143,7 @@ function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "c
         }`}
       >
         <Layers className="size-3" />
-        Classic
+        {labels.classic}
       </button>
       <button
         ref={componentsRef}
@@ -152,7 +153,7 @@ function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "c
         }`}
       >
         <Box className="size-3" />
-        Components
+        {labels.components}
       </button>
     </div>
   );
@@ -160,6 +161,7 @@ function ModeToggle({ mode, onModeChange }: { mode: string; onModeChange: (m: "c
 
 function HomeContent() {
   const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload, undo, redo, canUndo, canRedo } = useBuilderStore();
+  const { t } = useLocale();
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [previewWidth, setPreviewWidth] = useState(DEFAULT_WIDTH);
@@ -345,7 +347,7 @@ function HomeContent() {
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col overflow-hidden md:flex-row">
         <div className="flex min-h-0 flex-[3] flex-col overflow-hidden md:flex-1">
           <div className="flex min-h-9 h-auto flex-wrap items-center justify-between gap-y-1 border-b border-white/[0.06] px-3">
-            <ModeToggle mode={mode} onModeChange={(m) => { setMode(m); setCurrentSavedId(null); }} />
+            <ModeToggle mode={mode} onModeChange={(m) => { setMode(m); setCurrentSavedId(null); }} labels={t.mode} />
             <div className="flex flex-wrap items-center gap-1">
               <button
                 onClick={handleCopyLink}
@@ -353,7 +355,7 @@ function HomeContent() {
                 className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
               >
                 {shareCopied ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
-                {shareCopied ? "Copied!" : "Link"}
+                {shareCopied ? t.toolbar.copied : t.toolbar.link}
               </button>
               {session?.user && (
                 <button
@@ -362,7 +364,7 @@ function HomeContent() {
                   className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
                 >
                   {saveStatus === "saved" ? <Check className="size-3.5 text-emerald-400" /> : <Bookmark className="size-3.5" />}
-                  {saveStatus === "saved" ? "Saved!" : "Save"}
+                  {saveStatus === "saved" ? t.toolbar.saved : t.toolbar.save}
                 </button>
               )}
               <JsonEditor />
@@ -370,7 +372,7 @@ function HomeContent() {
                 onClick={undo}
                 disabled={!canUndo()}
                 className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-25 disabled:pointer-events-none"
-                title="Undo"
+                title={t.toolbar.undo}
               >
                 <Undo2 className="size-3.5" />
               </button>
@@ -378,7 +380,7 @@ function HomeContent() {
                 onClick={redo}
                 disabled={!canRedo()}
                 className="inline-flex items-center justify-center rounded-md h-7 w-7 text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-25 disabled:pointer-events-none"
-                title="Redo"
+                title={t.toolbar.redo}
               >
                 <Redo2 className="size-3.5" />
               </button>
@@ -396,22 +398,22 @@ function HomeContent() {
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10 mb-1">
                       <AlertTriangle className="size-5 text-red-400" />
                     </div>
-                    <DialogTitle className="text-[#e4e4e7]">Are you sure?</DialogTitle>
+                    <DialogTitle className="text-[#e4e4e7]">{t.reset.title}</DialogTitle>
                     <DialogDescription className="text-[#71717a]">
-                      Your embed will be deleted and all progress will be lost.
+                      {t.reset.description}
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter className="bg-transparent border-white/[0.06] flex-row gap-2 sm:justify-center">
                     <DialogClose
                       className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-white/[0.06] text-[#a1a1aa] hover:bg-white/[0.1] hover:text-white transition-colors"
                     >
-                      Cancel
+                      {t.reset.cancel}
                     </DialogClose>
                     <DialogClose
                       className="inline-flex items-center justify-center rounded-md h-8 px-4 text-xs font-medium bg-red-500/80 text-white hover:bg-red-500 transition-colors"
                       onClick={() => { reset(); setCurrentSavedId(null); window.history.replaceState(null, "", window.location.pathname); }}
                     >
-                      Delete
+                      {t.reset.delete}
                     </DialogClose>
                   </DialogFooter>
                 </DialogContent>
@@ -445,7 +447,7 @@ function HomeContent() {
         >
           <div className="flex h-9 items-center border-b border-white/[0.06] px-3">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#52525b]">
-              Preview
+              {t.preview.title}
             </span>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -468,14 +470,14 @@ function HomeContent() {
             className="mx-3 w-[calc(100%-1.5rem)] max-w-2xl max-h-[85vh] min-h-[50vh] rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col sm:mx-0 sm:w-full"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <h2 className="text-sm font-semibold text-[#e4e4e7]">Saved Embeds</h2>
+              <h2 className="text-sm font-semibold text-[#e4e4e7]">{t.savedEmbeds.title}</h2>
               <button onClick={() => setSavedOpen(false)} className="text-[#71717a] hover:text-white transition-colors text-lg leading-none">&times;</button>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
               {savedLoading ? (
-                <p className="text-sm text-[#71717a] text-center py-8">Loading...</p>
+                <p className="text-sm text-[#71717a] text-center py-8">{t.savedEmbeds.loading}</p>
               ) : savedEmbeds.length === 0 ? (
-                <p className="text-sm text-[#71717a] text-center py-8">No saved embeds yet</p>
+                <p className="text-sm text-[#71717a] text-center py-8">{t.savedEmbeds.noSaved}</p>
               ) : (
                 savedEmbeds.map((item) => (
                   <div key={item.id} className="rounded-md bg-white/[0.03] border border-white/[0.06]">
@@ -499,7 +501,7 @@ function HomeContent() {
                           />
                         ) : (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-[#e4e4e7] truncate">{item.title || "Untitled"}</span>
+                            <span className="text-xs font-semibold text-[#e4e4e7] truncate">{item.title || t.savedEmbeds.untitled}</span>
                             <span className="text-[10px] rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[#71717a] font-medium shrink-0">{item.mode === "classic" ? "Classic" : "V2"}</span>
                           </div>
                         )}
@@ -516,12 +518,12 @@ function HomeContent() {
                         className="inline-flex items-center gap-1 rounded-md h-7 px-2.5 text-[11px] font-medium bg-[#5865f2] text-white hover:bg-[#4752c4] transition-colors shrink-0"
                       >
                         <ExternalLink className="size-3" />
-                        Load
+                        {t.savedEmbeds.load}
                       </button>
                       <div className="relative shrink-0">
                         {confirmDeleteId === item.id && (
-                          <div className="absolute bottom-full right-0 mb-1 z-[9999] whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400" style={{ animation: "confirmFadeIn 150ms ease-out" }}>
-                            You sure?
+                           <div className="absolute bottom-full right-0 mb-1 z-[9999] whitespace-nowrap rounded-md bg-red-500/15 border border-red-500/25 px-2 py-1 text-[10px] font-medium text-red-400" style={{ animation: "confirmFadeIn 150ms ease-out" }}>
+                            {t.savedEmbeds.youSure}
                           </div>
                         )}
                         <button
@@ -545,14 +547,14 @@ function HomeContent() {
       )}
       <ChatWidget />
       <div className="fixed bottom-1 left-1/2 -translate-x-1/2 text-xs text-[#71717a] md:left-auto md:translate-x-0 md:right-3 md:bottom-2">
-        Built with{" "}
+        {t.footer.builtWith}{" "}
         <img
           src="https://em-content.zobj.net/source/apple/391/red-heart_2764-fe0f.png"
           alt="❤️"
           className="inline-block h-3.5 w-3.5 align-[-2px]"
           draggable={false}
         />{" "}
-        by{" "}
+        {t.footer.by}{" "}
         <a
           href="https://rin.ms"
           target="_blank"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { usePersistedCollapse } from "@/hooks/use-persisted-collapse";
 import {
   ArrowDown,
@@ -87,6 +88,7 @@ function FieldEditor({
   gripProps: Record<string, unknown>;
 }) {
   const { updateField, removeField, moveField } = useBuilderStore();
+  const { t } = useLocale();
 
   return (
     <div className="rounded bg-white/[0.02] border border-white/[0.04] p-1.5 space-y-1" {...dragProps}>
@@ -94,7 +96,7 @@ function FieldEditor({
         <div className="flex items-center gap-1">
           <GripVertical {...gripProps} className="size-3 text-[#3f3f46] cursor-grab active:cursor-grabbing touch-none" />
           <span className="text-[10px] font-medium text-muted-foreground">
-            Field {index + 1}
+            {t.embed.field} {index + 1}
           </span>
         </div>
         <div className="flex items-center gap-0">
@@ -129,7 +131,7 @@ function FieldEditor({
 
       <div className="space-y-0.5">
         <div className="flex items-center justify-between">
-          <Label className="text-[10px] text-muted-foreground">Name</Label>
+          <Label className="text-[10px] text-muted-foreground">{t.embed.fieldName}</Label>
           <CharCount
             current={field.name.length}
             max={LIMITS.EMBED_FIELD_NAME}
@@ -140,7 +142,7 @@ function FieldEditor({
           onChange={(e) =>
             updateField(embedId, field.id, { name: e.target.value })
           }
-          placeholder="Field name"
+          placeholder={t.embed.fieldNamePlaceholder}
           maxLength={LIMITS.EMBED_FIELD_NAME}
           className="h-7 text-xs"
         />
@@ -148,7 +150,7 @@ function FieldEditor({
 
       <div className="space-y-0.5">
         <div className="flex items-center justify-between">
-          <Label className="text-[10px] text-muted-foreground">Value</Label>
+          <Label className="text-[10px] text-muted-foreground">{t.embed.fieldValue}</Label>
           <CharCount
             current={field.value.length}
             max={LIMITS.EMBED_FIELD_VALUE}
@@ -159,7 +161,7 @@ function FieldEditor({
           onValueChange={(v) =>
             updateField(embedId, field.id, { value: v })
           }
-          placeholder="Field value"
+          placeholder={t.embed.fieldValuePlaceholder}
           maxLength={LIMITS.EMBED_FIELD_VALUE}
           className="text-xs min-h-[40px]"
         />
@@ -175,7 +177,7 @@ function FieldEditor({
           className="data-checked:bg-[#5865f2]"
         />
         <Label className="text-[10px] text-muted-foreground cursor-pointer">
-          Inline
+          {t.embed.inline}
         </Label>
       </div>
     </div>
@@ -197,6 +199,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
     addField,
     reorderFields,
   } = useBuilderStore();
+  const { t } = useLocale();
 
   const { getDragProps: getFieldDragProps, getGripProps: getFieldGripProps, getContainerProps: getFieldContainerProps } = useDragReorder(
     useCallback((from: number, to: number) => reorderFields(embed.id, from, to), [embed.id, reorderFields])
@@ -283,14 +286,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<User className="size-3" />}
-              label="Author"
+              label={t.embed.author}
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 pb-2 space-y-1">
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Name</Label>
+                  <Label className="text-[10px] text-muted-foreground">{t.embed.authorName}</Label>
                   <CharCount
                     current={embed.author?.name?.length ?? 0}
                     max={LIMITS.EMBED_AUTHOR_NAME}
@@ -299,13 +302,13 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                 <Input
                   value={embed.author?.name ?? ""}
                   onChange={(e) => setAuthor("name", e.target.value)}
-                  placeholder="Author name"
+                  placeholder={t.embed.authorName}
                   maxLength={LIMITS.EMBED_AUTHOR_NAME}
                   className="h-7 text-xs"
                 />
               </div>
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.authorUrl}</Label>
                 <Input
                   value={embed.author?.url ?? ""}
                   onChange={(e) => setAuthor("url", e.target.value)}
@@ -314,7 +317,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                 />
               </div>
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Icon URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.authorIconUrl}</Label>
                 <Input
                   value={embed.author?.icon_url ?? ""}
                   onChange={(e) => setAuthor("icon_url", e.target.value)}
@@ -332,14 +335,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<Type className="size-3" />}
-              label="Body"
+              label={t.embed.body}
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 pb-2 pt-1 space-y-1">
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Title</Label>
+                  <Label className="text-[10px] text-muted-foreground">{t.embed.title}</Label>
                   <CharCount
                     current={embed.title?.length ?? 0}
                     max={LIMITS.EMBED_TITLE}
@@ -350,14 +353,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                   onChange={(e) =>
                     updateEmbed(embed.id, { title: e.target.value })
                   }
-                  placeholder="Embed title"
+                  placeholder={t.embed.title}
                   maxLength={LIMITS.EMBED_TITLE}
                   className="h-7 text-xs"
                 />
               </div>
 
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Title URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.titleUrl}</Label>
                 <Input
                   value={embed.url ?? ""}
                   onChange={(e) => updateEmbed(embed.id, { url: e.target.value })}
@@ -368,7 +371,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
 
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Description</Label>
+                  <Label className="text-[10px] text-muted-foreground">{t.embed.description}</Label>
                   <CharCount
                     current={embed.description?.length ?? 0}
                     max={LIMITS.EMBED_DESCRIPTION}
@@ -379,14 +382,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                   onValueChange={(v) =>
                     updateEmbed(embed.id, { description: v })
                   }
-                  placeholder="Supports markdown"
+                  placeholder={t.embed.descriptionPlaceholder}
                   maxLength={LIMITS.EMBED_DESCRIPTION}
                   className="text-xs min-h-[56px]"
                 />
               </div>
 
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.color}</Label>
                 <ColorPicker
                   color={embed.color ?? 0x5865f2}
                   onChange={(color) => updateEmbed(embed.id, { color })}
@@ -402,7 +405,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<LayoutGrid className="size-3" />}
-              label={`Fields (${embed.fields.length}/${LIMITS.EMBED_FIELDS})`}
+              label={`${t.embed.fields} (${embed.fields.length}/${LIMITS.EMBED_FIELDS})`}
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -428,7 +431,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                   className="h-6 w-full border-dashed text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground/30 bg-transparent"
                 >
                   <Plus className="size-3" />
-                  Add Field
+                  {t.embed.addField}
                 </Button>
               )}
             </div>
@@ -441,13 +444,13 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<ImageIcon className="size-3" />}
-              label="Images"
+              label={t.embed.images}
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 pb-2 space-y-1">
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Image URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.imageUrl}</Label>
                 <Input
                   value={embed.image?.url ?? ""}
                   onChange={(e) =>
@@ -458,7 +461,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                 />
               </div>
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Thumbnail URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.thumbnailUrl}</Label>
                 <Input
                   value={embed.thumbnail?.url ?? ""}
                   onChange={(e) =>
@@ -480,14 +483,14 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
           <CollapsibleTrigger className="w-full">
             <SectionHeader
               icon={<MessageSquare className="size-3" />}
-              label="Footer"
+              label={t.embed.footer}
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-2 pb-2 space-y-1">
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Text</Label>
+                  <Label className="text-[10px] text-muted-foreground">{t.embed.footerText}</Label>
                   <CharCount
                     current={embed.footer?.text?.length ?? 0}
                     max={LIMITS.EMBED_FOOTER_TEXT}
@@ -496,13 +499,13 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                 <Input
                   value={embed.footer?.text ?? ""}
                   onChange={(e) => setFooter("text", e.target.value)}
-                  placeholder="Footer text"
+                  placeholder={t.embed.footerTextPlaceholder}
                   maxLength={LIMITS.EMBED_FOOTER_TEXT}
                   className="h-7 text-xs"
                 />
               </div>
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Icon URL</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.footerIconUrl}</Label>
                 <Input
                   value={embed.footer?.icon_url ?? ""}
                   onChange={(e) => setFooter("icon_url", e.target.value)}
@@ -511,7 +514,7 @@ export function EmbedEditor({ embed, embedIndex }: EmbedEditorProps) {
                 />
               </div>
               <div className="space-y-0.5">
-                <Label className="text-[10px] text-muted-foreground">Timestamp</Label>
+                <Label className="text-[10px] text-muted-foreground">{t.embed.timestamp}</Label>
                 <DateTimePicker
                   value={embed.timestamp}
                   onChange={(iso) => updateEmbed(embed.id, { timestamp: iso })}

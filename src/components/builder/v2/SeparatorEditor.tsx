@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,6 +21,7 @@ export function SeparatorEditor({
   component,
   onChange,
 }: SeparatorEditorProps) {
+  const { t } = useLocale();
   return (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
@@ -30,12 +32,12 @@ export function SeparatorEditor({
           size="sm"
         />
         <Label className="text-xs text-[#71717a] cursor-pointer">
-          Show Divider
+          {t.v2.showDivider}
         </Label>
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="text-xs text-[#71717a]">Spacing</label>
+        <label className="text-xs text-[#71717a]">{t.v2.spacing}</label>
         <Select
           value={String(component.spacing)}
           onValueChange={(val) =>
@@ -47,10 +49,10 @@ export function SeparatorEditor({
           </SelectTrigger>
           <SelectContent className="border-white/[0.08] bg-[#111113]">
             <SelectItem value="1" className="text-[#e4e4e7] text-xs">
-              Small
+              {t.v2.small}
             </SelectItem>
             <SelectItem value="2" className="text-[#e4e4e7] text-xs">
-              Large
+              {t.v2.large}
             </SelectItem>
           </SelectContent>
         </Select>

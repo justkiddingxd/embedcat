@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { buildClassicPayload, buildComponentsV2Payload, sendWebhookMessage } from "@/lib/build-payload";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { LIMITS } from "@/types/discord";
 
 export function WebhookPanel() {
   const { webhook, setWebhook, mode, content, embeds, components } = useBuilderStore();
+  const { t } = useLocale();
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -40,7 +42,7 @@ export function WebhookPanel() {
     <div className="space-y-1.5 rounded-md border border-white/[0.06] bg-[#111113] p-2">
       <div className="flex items-center gap-1.5">
         <Input
-          placeholder="https://discord.com/api/webhooks/..."
+          placeholder={t.webhook.urlPlaceholder}
           value={webhook.url}
           onChange={(e) => setWebhook({ url: e.target.value })}
           className="h-7 flex-1 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"
@@ -56,7 +58,7 @@ export function WebhookPanel() {
           ) : (
             <Send className="size-3" />
           )}
-          Send
+          {t.webhook.send}
         </Button>
       </div>
 
@@ -73,7 +75,7 @@ export function WebhookPanel() {
           ) : (
             <AlertCircle className="size-3" />
           )}
-          {result.success ? "Sent!" : result.error}
+          {result.success ? t.webhook.sent : result.error}
         </div>
       )}
 
@@ -82,12 +84,12 @@ export function WebhookPanel() {
           <ChevronDown
             className={`size-3 transition-transform duration-200 ${optionsOpen ? "rotate-0" : "-rotate-90"}`}
           />
-          Options
+          {t.webhook.options}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-1.5 space-y-1.5">
           <div className="grid grid-cols-2 gap-1.5">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-medium text-[#52525b]">Username</label>
+              <label className="text-[10px] font-medium text-[#52525b]">{t.webhook.username}</label>
               <Input
                 placeholder="embed.cat"
                 value={webhook.username || ""}
@@ -97,7 +99,7 @@ export function WebhookPanel() {
               />
             </div>
             <div className="space-y-0.5">
-              <label className="text-[10px] font-medium text-[#52525b]">Avatar URL</label>
+              <label className="text-[10px] font-medium text-[#52525b]">{t.webhook.avatarUrl}</label>
               <Input
                 placeholder="https://..."
                 value={webhook.avatar_url || ""}
@@ -107,9 +109,9 @@ export function WebhookPanel() {
             </div>
           </div>
           <div className="space-y-0.5">
-            <label className="text-[10px] font-medium text-[#52525b]">Thread ID</label>
+            <label className="text-[10px] font-medium text-[#52525b]">{t.webhook.threadId}</label>
             <Input
-              placeholder="Thread or forum post ID"
+              placeholder={t.webhook.threadPlaceholder}
               value={webhook.thread_id || ""}
               onChange={(e) => setWebhook({ thread_id: e.target.value })}
               className="h-7 border-white/[0.06] bg-[#0a0a0b] text-xs text-[#fafafa] placeholder:text-[#52525b]"

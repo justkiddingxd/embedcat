@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -16,22 +17,31 @@ interface ButtonEditorProps {
   onChange: (updates: Partial<ButtonComponent>) => void;
 }
 
-const STYLE_OPTIONS: { value: ButtonStyle; label: string; color: string }[] = [
-  { value: ButtonStyle.Primary, label: "Primary", color: "#5865f2" },
-  { value: ButtonStyle.Secondary, label: "Secondary", color: "#4e5058" },
-  { value: ButtonStyle.Success, label: "Success", color: "#248046" },
-  { value: ButtonStyle.Danger, label: "Danger", color: "#da373c" },
-  { value: ButtonStyle.Link, label: "Link", color: "#4e5058" },
-];
+const STYLE_COLORS: Record<ButtonStyle, string> = {
+  [ButtonStyle.Primary]: "#5865f2",
+  [ButtonStyle.Secondary]: "#4e5058",
+  [ButtonStyle.Success]: "#248046",
+  [ButtonStyle.Danger]: "#da373c",
+  [ButtonStyle.Link]: "#4e5058",
+};
 
 export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
+  const { t } = useLocale();
   const isLink = button.style === ButtonStyle.Link;
+
+  const STYLE_OPTIONS: { value: ButtonStyle; label: string; color: string }[] = [
+    { value: ButtonStyle.Primary, label: t.button.primary, color: STYLE_COLORS[ButtonStyle.Primary] },
+    { value: ButtonStyle.Secondary, label: t.button.secondary, color: STYLE_COLORS[ButtonStyle.Secondary] },
+    { value: ButtonStyle.Success, label: t.button.success, color: STYLE_COLORS[ButtonStyle.Success] },
+    { value: ButtonStyle.Danger, label: t.button.danger, color: STYLE_COLORS[ButtonStyle.Danger] },
+    { value: ButtonStyle.Link, label: t.button.link, color: STYLE_COLORS[ButtonStyle.Link] },
+  ];
 
   return (
     <div className="grid grid-cols-[1fr_1fr] gap-2">
       <div className="space-y-1">
         <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
-          Style
+          {t.button.style}
         </label>
         <Select
           value={String(button.style)}
@@ -80,19 +90,19 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
 
       <div className="space-y-1">
         <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
-          Label
+          {t.button.label}
         </label>
         <Input
           value={button.label || ""}
           onChange={(e) => onChange({ label: e.target.value })}
-          placeholder="Click me"
+          placeholder={t.button.labelPlaceholder}
           className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
         />
       </div>
 
       <div className="space-y-1">
         <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
-          {isLink ? "URL" : "Custom ID"}
+          {isLink ? t.button.url : t.button.customId}
         </label>
         <Input
           value={isLink ? button.url || "" : button.custom_id || ""}
@@ -103,7 +113,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
                 : { custom_id: e.target.value }
             )
           }
-          placeholder={isLink ? "https://..." : "my-button-id"}
+          placeholder={isLink ? "https://..." : t.button.customIdPlaceholder}
           className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
         />
       </div>
@@ -117,7 +127,7 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
             size="sm"
           />
           <Label className="text-[10px] text-[#71717a] cursor-pointer">
-            Disabled
+            {t.button.disabled}
           </Label>
         </div>
       </div>

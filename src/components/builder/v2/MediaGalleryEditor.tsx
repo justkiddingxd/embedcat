@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +23,7 @@ export function MediaGalleryEditor({
   component,
   onChange,
 }: MediaGalleryEditorProps) {
+  const { t } = useLocale();
   const items = component.items;
 
   const updateItem = (idx: number, updates: Partial<MediaGalleryItem>) => {
@@ -52,7 +54,7 @@ export function MediaGalleryEditor({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs text-[#71717a]">
-          Media Items
+          {t.v2.mediaItems}
           <Badge
             variant="secondary"
             className="ml-2 bg-[#18181b] text-[#71717a] text-[10px] h-4 border-0"
@@ -68,7 +70,7 @@ export function MediaGalleryEditor({
           className="text-[#5865f2] hover:text-[#7983f5] hover:bg-[#5865f2]/10 text-xs gap-1"
         >
           <Plus className="size-3" />
-          Add
+          {t.v2.add}
         </Button>
       </div>
 
@@ -104,7 +106,7 @@ export function MediaGalleryEditor({
                 onChange={(e) =>
                   updateItem(idx, { description: e.target.value })
                 }
-                placeholder="Description (alt text)"
+                placeholder={t.v2.descriptionAlt}
                 className="h-7 flex-1 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs placeholder:text-[#3f3f46]"
               />
               <div className="flex items-center gap-1.5 shrink-0">
@@ -117,7 +119,7 @@ export function MediaGalleryEditor({
                   size="sm"
                 />
                 <Label className="text-[10px] text-[#52525b] cursor-pointer">
-                  Spoiler
+                  {t.v2.spoiler}
                 </Label>
               </div>
             </div>
