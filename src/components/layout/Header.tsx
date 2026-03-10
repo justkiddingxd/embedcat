@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LogIn, LogOut, Cat, ChevronDown, Bookmark, Shield, X, Infinity, Users, BarChart3 } from "lucide-react";
+import { LogIn, LogOut, Cat, ChevronDown, Bookmark, Shield, X, Infinity, Users, BarChart3, FileText } from "lucide-react";
+import Link from "next/link";
 
 const ADMIN_USER_ID = "1376745003174334505";
 
@@ -316,7 +317,15 @@ export function Header({ onOpenSaved }: { onOpenSaved?: () => void }) {
   return (
     <>
     <header className="relative flex h-10 items-center justify-between border-b border-white/[0.06] bg-[#0a0a0b] px-4">
-      <div className="w-8 sm:w-32" />
+      <div className="w-8 sm:w-32">
+        <Link
+          href="/docs"
+          className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+        >
+          <FileText className="size-3" />
+          Docs
+        </Link>
+      </div>
 
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5">
         <Cat className="size-4 text-[#5865f2]" />
