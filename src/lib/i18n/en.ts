@@ -223,6 +223,8 @@ export const en = {
     aiAnswer: "Answer questions about Discord embed limits and formatting",
     aiGenerate: "Generate Components V2 layouts from scratch",
     aiSuggest: "Suggest designs, colors, and content",
+    aiRestyle: "Feed it old embeds and it will create new ones in the same style",
+    aiEmoji: "Send custom emoji and the AI will use them throughout the conversation",
     aiHow: "How it works:",
     aiContext: "The AI sees your current embed state as context",
     aiApply: "When it generates an embed, you'll see an **Apply Embed** button — click to load it into the editor",

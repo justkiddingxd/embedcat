@@ -132,19 +132,78 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   const textStream = result.textStream;
   let fullText = "";
+  let buffer = "";
+  let insideCodeBlock = false;
+  let codeBlockContent = "";
+  const embedBlocks: string[] = [];
 
   const outputStream = new ReadableStream({
     async start(controller) {
       try {
         for await (const chunk of textStream) {
           fullText += chunk;
-          controller.enqueue(encoder.encode(chunk));
+          buffer += chunk;
+
+          while (buffer.length > 0) {
+            if (insideCodeBlock) {
+              const closeIdx = buffer.indexOf("```");
+              if (closeIdx === -1) {
+                codeBlockContent += buffer;
+                buffer = "";
+              } else {
+                codeBlockContent += buffer.slice(0, closeIdx);
+                buffer = buffer.slice(closeIdx + 3);
+                insideCodeBlock = false;
+
+                const trimmed = codeBlockContent.trim();
+                const bodyStart = trimmed.indexOf("\n");
+                const body = bodyStart !== -1 ? trimmed.slice(bodyStart + 1).trim() : trimmed;
+
+                let isEmbed = false;
+                if (body.startsWith("{")) {
+                  try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.embeds || parsed.components || parsed.content !== undefined) {
+                      embedBlocks.push(body);
+                      isEmbed = true;
+                    }
+                  } catch {
+                    void 0;
+                  }
+                }
+
+                if (!isEmbed) {
+                  controller.enqueue(encoder.encode("```" + codeBlockContent + "```"));
+                }
+                codeBlockContent = "";
+              }
+            } else {
+              const openIdx = buffer.indexOf("```");
+              if (openIdx === -1) {
+                const safe = buffer.length > 3 ? buffer.slice(0, -3) : "";
+                if (safe) {
+                  controller.enqueue(encoder.encode(safe));
+                  buffer = buffer.slice(safe.length);
+                }
+                break;
+              } else {
+                if (openIdx > 0) {
+                  controller.enqueue(encoder.encode(buffer.slice(0, openIdx)));
+                }
+                buffer = buffer.slice(openIdx + 3);
+                insideCodeBlock = true;
+                codeBlockContent = "";
+              }
+            }
+          }
         }
 
-        const { clean, blocks } = extractAndStrip(fullText);
+        if (buffer.length > 0 && !insideCodeBlock) {
+          controller.enqueue(encoder.encode(buffer));
+        }
 
-        if (blocks.length > 0) {
-          controller.enqueue(encoder.encode(EMBED_DELIMITER + JSON.stringify(blocks)));
+        if (embedBlocks.length > 0) {
+          controller.enqueue(encoder.encode(EMBED_DELIMITER + JSON.stringify(embedBlocks)));
         }
 
         controller.close();

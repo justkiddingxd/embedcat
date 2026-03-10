@@ -148,6 +148,8 @@ export default function DocsPage() {
               <li>{t.docs.aiAnswer}</li>
               <li>{t.docs.aiGenerate}</li>
               <li>{t.docs.aiSuggest}</li>
+              <li>{t.docs.aiRestyle}</li>
+              <li>{t.docs.aiEmoji}</li>
             </ul>
             <p className="font-medium text-[#e4e4e7]">{t.docs.aiHow}</p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
