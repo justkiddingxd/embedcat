@@ -9,10 +9,13 @@ import { useBuilderStore } from "@/store/builder-store";
 import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
 import type { BuilderMode } from "@/types/discord";
 
+const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
+
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  embedBlocks?: string[];
   createdAt: string;
 }
 
@@ -37,29 +40,8 @@ function stripLeakedJson(text: string): string {
 
 function renderMarkdown(text: string): ReactNode[] {
   const cleaned = stripLeakedJson(text);
-  const parts: ReactNode[] = [];
-  const inlineCodeBlockRegex = /`([^`]+)`/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let keyIdx = 0;
-
-  const lines = cleaned.split("\n");
-  const filteredLines = lines.filter((line) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-      try { JSON.parse(trimmed); return false; } catch { void 0; }
-    }
-    if (trimmed.startsWith('"') && (trimmed.endsWith('",') || trimmed.endsWith('"'))) {
-      if (/^\s*"[a-z_]+":\s*/.test(trimmed)) return false;
-    }
-    return true;
-  });
-
-  const finalText = filteredLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  if (!finalText) return parts;
-
-  parts.push(...renderInline(finalText, keyIdx));
-  return parts;
+  if (!cleaned) return [];
+  return renderInline(cleaned, 0);
 }
 
 function renderInline(text: string, startKey: number): ReactNode[] {
@@ -102,24 +84,7 @@ function renderInline(text: string, startKey: number): ReactNode[] {
   return parts;
 }
 
-function extractEmbedJsonBlocks(content: string): string[] {
-  const blocks: string[] = [];
-  const regex = /```(?:embed-json|json)?\n?([\s\S]*?)```/g;
-  let m: RegExpExecArray | null;
-  while ((m = regex.exec(content)) !== null) {
-    const trimmed = m[1].trim();
-    if (!trimmed.startsWith("{")) continue;
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed.embeds || parsed.components || parsed.content !== undefined) {
-        blocks.push(trimmed);
-      }
-    } catch {
-      void 0;
-    }
-  }
-  return blocks;
-}
+
 
 export function ChatWidget() {
   const { data: authSession } = useSession();
@@ -249,8 +214,31 @@ export function ChatWidget() {
     try {
       const res = await fetch(`/api/chat/sessions/${sid}/messages`);
       if (res.ok) {
-        const data = await res.json();
-        setMessages(data as ChatMessage[]);
+        const data = (await res.json()) as ChatMessage[];
+        setMessages(
+          data.map((msg) => {
+            if (msg.role !== "assistant") return msg;
+            const blocks: string[] = [];
+            const clean = msg.content.replace(
+              /```(?:embed-json|json)?\n?([\s\S]*?)```/g,
+              (_m: string, inner: string) => {
+                const trimmed = inner.trim();
+                if (!trimmed.startsWith("{")) return "";
+                try {
+                  const parsed = JSON.parse(trimmed);
+                  if (parsed.embeds || parsed.components || parsed.content !== undefined) {
+                    blocks.push(trimmed);
+                    return "";
+                  }
+                } catch {
+                  void 0;
+                }
+                return "";
+              }
+            ).replace(/\n{3,}/g, "\n\n").trim();
+            return { ...msg, content: clean, embedBlocks: blocks };
+          })
+        );
       }
     } catch {
       void 0;
@@ -441,6 +429,22 @@ export function ChatWidget() {
           typewriterBuffer.current += decoder.decode(value, { stream: true });
         }
 
+        const rawFull = typewriterBuffer.current;
+        let cleanText = rawFull;
+        let embedBlocks: string[] = [];
+
+        const delimIdx = rawFull.indexOf(EMBED_DELIMITER);
+        if (delimIdx !== -1) {
+          cleanText = rawFull.slice(0, delimIdx).trim();
+          try {
+            embedBlocks = JSON.parse(rawFull.slice(delimIdx + EMBED_DELIMITER.length)) as string[];
+          } catch {
+            void 0;
+          }
+        }
+
+        typewriterBuffer.current = cleanText;
+
         const waitForTypewriter = () => new Promise<void>((resolve) => {
           const check = () => {
             if (typewriterShown.current >= typewriterBuffer.current.length) {
@@ -460,7 +464,7 @@ export function ChatWidget() {
 
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === aiMsg.id ? { ...m, content: typewriterBuffer.current } : m
+            m.id === aiMsg.id ? { ...m, content: cleanText, embedBlocks } : m
           )
         );
       } catch {
@@ -678,7 +682,6 @@ export function ChatWidget() {
 
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
-                const embedBlocks = !isUser ? extractEmbedJsonBlocks(msg.content) : [];
 
                 return (
                   <div
@@ -709,7 +712,7 @@ export function ChatWidget() {
                       )}
                     </div>
 
-                    {embedBlocks.map((block, bi) => (
+                    {(msg.embedBlocks || []).map((block: string, bi: number) => (
                       <button
                         key={`apply-${msg.id}-${bi}`}
                         onClick={() => handleApplyEmbed(block)}

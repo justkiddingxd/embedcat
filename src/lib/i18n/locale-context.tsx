@@ -15,8 +15,6 @@ function getInitialLocale(): Locale {
   if (typeof window === "undefined") return "en";
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "ru" || stored === "en") return stored;
-  const lang = navigator.language.toLowerCase();
-  if (lang.startsWith("ru")) return "ru";
   return "en";
 }
 

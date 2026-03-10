@@ -30,27 +30,51 @@ export function createEmptyEmbed(): DiscordEmbed {
   };
 }
 
-function createWelcomeEmbed(): DiscordEmbed {
-  return {
-    id: nanoid(),
+function getStoredLocale(): "en" | "ru" {
+  if (typeof window === "undefined") return "en";
+  try {
+    const stored = localStorage.getItem("embedcat-locale");
+    if (stored === "ru") return "ru";
+  } catch {
+    void 0;
+  }
+  return "en";
+}
+
+const welcomeEmbedStrings = {
+  en: {
+    title: "🐱 Welcome to embed.cat!",
+    description: "This is your first embed! Start editing it using the panel on the left, or ask the **AI assistant** to create something.\n\n**What you can do:**\n• Change text, colors, images\n• Add fields, buttons, author\n• Use **Components V2**\n• Send embeds via webhook",
+    footer: "embed.cat — simple Discord embed builder",
+    tipName: "💡 Tip",
+    tipValue: "Type something in the AI chat like:\n*\"Make a red embed with server rules\"*",
+    linksName: "🔗 Links",
+    linksValue: "[Documentation](https://embed.cat/docs) • [Discord](https://discord.gg/HvZGEYEgt5)",
+  },
+  ru: {
     title: "🐱 Добро пожаловать в embed.cat!",
     description: "Это твой первый эмбед! Начни редактировать его с помощью панели слева или попроси **AI-помощника** создать что-нибудь.\n\n**Что можно делать:**\n• Менять текст, цвет, картинки\n• Добавлять поля, кнопки, автора\n• Использовать **Components V2**\n• Отправлять эмбеды через вебхук",
+    footer: "embed.cat — простой конструктор эмбедов для Discord",
+    tipName: "💡 Совет",
+    tipValue: "Напиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*",
+    linksName: "🔗 Ссылки",
+    linksValue: "[Документация](https://embed.cat/docs) • [Discord](https://discord.gg/HvZGEYEgt5)",
+  },
+};
+
+function createWelcomeEmbed(locale?: "en" | "ru"): DiscordEmbed {
+  const lang = locale ?? getStoredLocale();
+  const s = welcomeEmbedStrings[lang];
+  return {
+    id: nanoid(),
+    title: s.title,
+    description: s.description,
     color: 0x5865f2,
-    footer: { text: "embed.cat — простой конструктор эмбедов для Discord" },
+    footer: { text: s.footer },
     thumbnail: { url: "https://rin.ms/embedcat.png" },
     fields: [
-      {
-        id: nanoid(),
-        name: "💡 Совет",
-        value: "Напиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*",
-        inline: true,
-      },
-      {
-        id: nanoid(),
-        name: "🔗 Ссылки",
-        value: "[Документация](https://docs.embed.cat) • [Discord](https://discord.gg/kUkuwdSNVd)",
-        inline: true,
-      },
+      { id: nanoid(), name: s.tipName, value: s.tipValue, inline: true },
+      { id: nanoid(), name: s.linksName, value: s.linksValue, inline: true },
     ],
   };
 }
@@ -122,33 +146,54 @@ export function createContainer(): ContainerComponent {
   };
 }
 
-function createWelcomeContainer(): ContainerComponent {
+const welcomeContainerStrings = {
+  en: {
+    heading: "# 🐱 Welcome to embed.cat!",
+    intro: "This is **Components V2** — Discord's new message layout system. You can use text, sections, separators, galleries, and buttons.\n\nStart editing from the panel on the left, or ask the **AI assistant** to create something.",
+    tip: "### 💡 Tip\nType something in the AI chat like:\n*\"Make a red embed with server rules\"*",
+    features: "### ✨ What you can do\n• Text with **markdown** and headings\n• Sections with images and buttons\n• Image galleries\n• Separators and link buttons",
+    docsBtn: "📖 Documentation",
+    discordBtn: "💬 Discord",
+  },
+  ru: {
+    heading: "# 🐱 Добро пожаловать в embed.cat!",
+    intro: "Это **Components V2** — новый способ оформления сообщений в Discord. Здесь можно использовать текст, секции, разделители, галереи и кнопки.\n\nНачни редактировать с панели слева или попроси **AI-помощника** создать что-нибудь.",
+    tip: "### 💡 Совет\nНапиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*",
+    features: "### ✨ Что можно делать\n• Текст с **маркдауном** и заголовками\n• Секции с картинками и кнопками\n• Галереи изображений\n• Разделители и кнопки-ссылки",
+    docsBtn: "📖 Документация",
+    discordBtn: "💬 Discord",
+  },
+};
+
+function createWelcomeContainer(locale?: "en" | "ru"): ContainerComponent {
+  const lang = locale ?? getStoredLocale();
+  const s = welcomeContainerStrings[lang];
   return {
     id: nanoid(),
     type: ComponentType.Container,
     accent_color: 0x5865f2,
     components: [
-      { id: nanoid(), type: ComponentType.TextDisplay, content: "# 🐱 Добро пожаловать в embed.cat!" },
+      { id: nanoid(), type: ComponentType.TextDisplay, content: s.heading },
       { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
-      { id: nanoid(), type: ComponentType.TextDisplay, content: "Это **Components V2** — новый способ оформления сообщений в Discord. Здесь можно использовать текст, секции, разделители, галереи и кнопки.\n\nНачни редактировать с панели слева или попроси **AI-помощника** создать что-нибудь." },
+      { id: nanoid(), type: ComponentType.TextDisplay, content: s.intro },
       { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
       {
         id: nanoid(),
         type: ComponentType.Section,
         components: [
-          { id: nanoid(), type: ComponentType.TextDisplay, content: "### 💡 Совет\nНапиши в чат с AI что-то вроде:\n*«Сделай красный эмбед с правилами сервера»*" },
+          { id: nanoid(), type: ComponentType.TextDisplay, content: s.tip },
         ],
         accessory: { id: nanoid(), type: ComponentType.Thumbnail, media: { url: "https://rin.ms/embedcat.png" } },
       },
       { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
-      { id: nanoid(), type: ComponentType.TextDisplay, content: "### ✨ Что можно делать\n• Текст с **маркдауном** и заголовками\n• Секции с картинками и кнопками\n• Галереи изображений\n• Разделители и кнопки-ссылки" },
+      { id: nanoid(), type: ComponentType.TextDisplay, content: s.features },
       { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
       {
         id: nanoid(),
         type: ComponentType.ActionRow,
         components: [
-          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: "📖 Документация", url: "https://embed.cat" },
-          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: "💬 Discord", url: "https://discord.gg/embedcat" },
+          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: s.docsBtn, url: "https://embed.cat/docs" },
+          { id: nanoid(), type: ComponentType.Button, style: ButtonStyle.Link, label: s.discordBtn, url: "https://discord.gg/HvZGEYEgt5" },
         ],
       },
     ],

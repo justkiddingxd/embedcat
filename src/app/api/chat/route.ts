@@ -15,6 +15,27 @@ import {
 
 export const maxDuration = 60;
 
+const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
+
+function extractAndStrip(text: string): { clean: string; blocks: string[] } {
+  const blocks: string[] = [];
+  const clean = text.replace(/```(?:embed-json|json)?\n?([\s\S]*?)```/g, (_match, inner: string) => {
+    const trimmed = inner.trim();
+    if (!trimmed.startsWith("{")) return "";
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.embeds || parsed.components || parsed.content !== undefined) {
+        blocks.push(trimmed);
+        return "";
+      }
+    } catch {
+      void 0;
+    }
+    return "";
+  });
+  return { clean: clean.replace(/\n{3,}/g, "\n\n").trim(), blocks };
+}
+
 export async function POST(req: Request) {
   try {
   const session = await getServerSession(authOptions);
@@ -106,20 +127,49 @@ export async function POST(req: Request) {
     model: anthropic(MODEL_ID),
     system: systemWithContext,
     messages,
-    onFinish: async ({ text }) => {
-      await prisma.chatMessage.create({
-        data: {
-          sessionId: chatSessionId!,
-          role: "assistant",
-          content: text,
-        },
-      });
+  });
+
+  const encoder = new TextEncoder();
+  const textStream = result.textStream;
+  let fullText = "";
+
+  const outputStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of textStream) {
+          fullText += chunk;
+          controller.enqueue(encoder.encode(chunk));
+        }
+
+        const { clean, blocks } = extractAndStrip(fullText);
+
+        if (blocks.length > 0) {
+          controller.enqueue(encoder.encode(EMBED_DELIMITER + JSON.stringify(blocks)));
+        }
+
+        controller.close();
+
+        await prisma.chatMessage.create({
+          data: {
+            sessionId: chatSessionId!,
+            role: "assistant",
+            content: fullText,
+          },
+        });
+      } catch (err) {
+        controller.error(err);
+      }
     },
   });
 
-  const response = result.toTextStreamResponse();
-  response.headers.set("X-Chat-Session-Id", chatSessionId);
-  response.headers.set("Access-Control-Expose-Headers", "X-Chat-Session-Id");
+  const response = new Response(outputStream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "X-Chat-Session-Id": chatSessionId,
+      "Access-Control-Expose-Headers": "X-Chat-Session-Id",
+    },
+  });
   return response;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "AI request failed";
