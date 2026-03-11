@@ -24,7 +24,8 @@ export async function GET() {
     totalMessages,
     totalSavedEmbeds,
     unlimitedCount,
-    recentUsers,
+    recentByLogin,
+    chatUserIds,
   ] = await Promise.all([
     prisma.appUser.count(),
     prisma.appUser.count({
@@ -41,7 +42,26 @@ export async function GET() {
       orderBy: { lastLogin: "desc" },
       take: 50,
     }),
+    prisma.chatSession.findMany({
+      select: { userId: true },
+      distinct: ["userId"],
+    }),
   ]);
+
+  const recentIds = new Set(recentByLogin.map((u) => u.discordId));
+  const missingChatUserIds = chatUserIds
+    .map((s) => s.userId)
+    .filter((id) => !recentIds.has(id));
+
+  let extraChatUsers: typeof recentByLogin = [];
+  if (missingChatUserIds.length > 0) {
+    extraChatUsers = await prisma.appUser.findMany({
+      where: { discordId: { in: missingChatUserIds } },
+      orderBy: { lastLogin: "desc" },
+    });
+  }
+
+  const recentUsers = [...recentByLogin, ...extraChatUsers];
 
   let discordAppStats = null;
   try {

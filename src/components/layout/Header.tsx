@@ -102,7 +102,7 @@ function UserStatsModal({ data, onClose }: { data: UserStatsData; onClose: () =>
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { e.nativeEvent.stopImmediatePropagation(); if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-sm rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
@@ -172,9 +172,12 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   const [userStats, setUserStats] = useState<UserStatsData | null>(null);
   const [userStatsLoading, setUserStatsLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const userStatsRef = useRef<UserStatsData | null>(null);
+  userStatsRef.current = userStats;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      if (userStatsRef.current) return;
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     document.addEventListener("mousedown", handler);
