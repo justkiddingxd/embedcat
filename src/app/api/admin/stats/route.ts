@@ -53,15 +53,31 @@ export async function GET() {
     .map((s) => s.userId)
     .filter((id) => !recentIds.has(id));
 
-  let extraChatUsers: typeof recentByLogin = [];
+  let foundAppUsers: typeof recentByLogin = [];
   if (missingChatUserIds.length > 0) {
-    extraChatUsers = await prisma.appUser.findMany({
+    foundAppUsers = await prisma.appUser.findMany({
       where: { discordId: { in: missingChatUserIds } },
       orderBy: { lastLogin: "desc" },
     });
   }
 
-  const recentUsers = [...recentByLogin, ...extraChatUsers];
+  const foundIds = new Set(foundAppUsers.map((u) => u.discordId));
+  const stubUsers = missingChatUserIds
+    .filter((id) => !foundIds.has(id))
+    .map((id) => ({
+      discordId: id,
+      username: "Unknown",
+      displayName: "",
+      avatar: null,
+      firstLogin: new Date(),
+      lastLogin: new Date(),
+      aiRequests: 0,
+      embedsCreated: 0,
+      webhooksSent: 0,
+      lastActive: new Date(),
+    }));
+
+  const recentUsers = [...recentByLogin, ...foundAppUsers, ...stubUsers];
 
   let discordAppStats = null;
   try {

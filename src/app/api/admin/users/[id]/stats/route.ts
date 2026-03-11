@@ -19,28 +19,28 @@ export async function GET(
     return NextResponse.json({ error: "Invalid Discord ID" }, { status: 400 });
   }
 
-  const user = await prisma.appUser.findUnique({ where: { discordId: id } });
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const [chatSessions, savedEmbeds, isUnlimited] = await Promise.all([
+  const [user, chatSessions, savedEmbeds, isUnlimited] = await Promise.all([
+    prisma.appUser.findUnique({ where: { discordId: id } }),
     prisma.chatSession.count({ where: { userId: id } }),
     prisma.savedEmbed.count({ where: { userId: id } }),
     prisma.unlimitedUser.findUnique({ where: { discordId: id } }).then((r) => r !== null),
   ]);
 
+  if (!user && chatSessions === 0 && savedEmbeds === 0) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
   return NextResponse.json({
-    discordId: user.discordId,
-    username: user.username,
-    displayName: user.displayName,
-    avatar: user.avatar,
-    firstLogin: user.firstLogin,
-    lastLogin: user.lastLogin,
-    lastActive: user.lastActive,
-    aiRequests: user.aiRequests,
-    embedsCreated: user.embedsCreated,
-    webhooksSent: user.webhooksSent,
+    discordId: id,
+    username: user?.username ?? "Unknown",
+    displayName: user?.displayName ?? "Unknown",
+    avatar: user?.avatar ?? null,
+    firstLogin: user?.firstLogin ?? null,
+    lastLogin: user?.lastLogin ?? null,
+    lastActive: user?.lastActive ?? null,
+    aiRequests: user?.aiRequests ?? 0,
+    embedsCreated: user?.embedsCreated ?? 0,
+    webhooksSent: user?.webhooksSent ?? 0,
     chatSessions,
     savedEmbeds,
     isUnlimited,
