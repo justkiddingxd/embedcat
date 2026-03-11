@@ -49,12 +49,16 @@ model UnlimitedUser {
 }
 
 model AppUser {
-  discordId   String   @id
-  username    String
-  displayName String   @default("")
-  avatar      String?
-  firstLogin  DateTime @default(now())
-  lastLogin   DateTime @default(now())
+  discordId     String   @id
+  username      String
+  displayName   String   @default("")
+  avatar        String?
+  firstLogin    DateTime @default(now())
+  lastLogin     DateTime @default(now())
+  aiRequests    Int      @default(0)
+  embedsCreated Int      @default(0)
+  webhooksSent  Int      @default(0)
+  lastActive    DateTime @default(now())
 
   @@index([lastLogin])
 }

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 
 const WEBHOOK_REGEX = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/.+$/;
 
@@ -37,6 +40,15 @@ export async function POST(req: NextRequest) {
       { error: (data as { message?: string }).message || `HTTP ${res.status}` },
       { status: res.status }
     );
+  }
+
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (userId) {
+    prisma.appUser.update({
+      where: { discordId: userId },
+      data: { webhooksSent: { increment: 1 }, lastActive: new Date() },
+    }).catch(() => void 0);
   }
 
   return NextResponse.json({ success: true });

@@ -208,13 +208,22 @@ export async function POST(req: Request) {
 
         controller.close();
 
-        await prisma.chatMessage.create({
-          data: {
-            sessionId: chatSessionId!,
-            role: "assistant",
-            content: fullText,
-          },
-        });
+        await Promise.all([
+          prisma.chatMessage.create({
+            data: {
+              sessionId: chatSessionId!,
+              role: "assistant",
+              content: fullText,
+            },
+          }),
+          prisma.appUser.update({
+            where: { discordId: userId },
+            data: {
+              aiRequests: { increment: 1 },
+              lastActive: new Date(),
+            },
+          }).catch(() => void 0),
+        ]);
       } catch (err) {
         controller.error(err);
       }

@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  if (userId) {
+    prisma.appUser.update({
+      where: { discordId: userId },
+      data: { embedsCreated: { increment: 1 }, lastActive: new Date() },
+    }).catch(() => void 0);
+  }
+
   return NextResponse.json({ id: saved.id });
 }
 

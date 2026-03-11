@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { Button } from "@/components/ui/button";
-import { LogIn, LogOut, Cat, ChevronDown, Bookmark, Shield, X, Infinity, Users, BarChart3, FileText, Globe } from "lucide-react";
+import { LogIn, LogOut, Cat, ChevronDown, Bookmark, Shield, X, Infinity, Users, BarChart3, FileText, Globe, Search, ArrowLeft, Bot, Send, MessageSquare, Save } from "lucide-react";
 import Link from "next/link";
 
 const ADMIN_USER_ID = "1376745003174334505";
@@ -34,6 +34,22 @@ interface AdminStats {
   unlimitedCount: number;
   recentUsers: AppUserRow[];
   discordAppStats: { userInstalls: number | null; guildCount: number | null } | null;
+}
+
+interface UserStatsData {
+  discordId: string;
+  username: string;
+  displayName: string;
+  avatar: string | null;
+  firstLogin: string;
+  lastLogin: string;
+  lastActive: string;
+  aiRequests: number;
+  embedsCreated: number;
+  webhooksSent: number;
+  chatSessions: number;
+  savedEmbeds: number;
+  isUnlimited: boolean;
 }
 
 function LangSwitcher() {
@@ -71,6 +87,78 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function UserStatsModal({ data, onClose }: { data: UserStatsData; onClose: () => void }) {
+  const { t } = useLocale();
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-sm rounded-lg border border-white/[0.08] bg-[#111113] shadow-2xl shadow-black/60 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <button onClick={onClose} className="text-[#52525b] hover:text-white transition-colors">
+              <ArrowLeft className="size-3.5" />
+            </button>
+            {data.avatar ? (
+              <img src={data.avatar} alt="" className="size-7 rounded-full" />
+            ) : (
+              <div className="size-7 rounded-full bg-[#5865f2]/20 flex items-center justify-center">
+                <Users className="size-3.5 text-[#5865f2]" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-[#e4e4e7] truncate">{data.displayName || data.username}</p>
+              <p className="text-[10px] text-[#52525b] font-mono">{data.discordId}</p>
+            </div>
+          </div>
+          {data.isUnlimited && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-[#5865f2] bg-[#5865f2]/10 px-2 py-0.5 rounded-full">
+              <Infinity className="size-3" />
+              {t.admin.unlimitedStatus}
+            </span>
+          )}
+        </div>
+        <div className="p-3 space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <StatCard label={t.admin.aiRequests} value={data.aiRequests} />
+            <StatCard label={t.admin.embedsCreated} value={data.embedsCreated} />
+            <StatCard label={t.admin.webhooksSent} value={data.webhooksSent} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <StatCard label={t.admin.chatSessionsCount} value={data.chatSessions} />
+            <StatCard label={t.admin.savedEmbedsUser} value={data.savedEmbeds} />
+          </div>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] text-[#52525b]">{t.admin.firstSeen}</span>
+              <span className="text-[10px] text-[#a1a1aa] tabular-nums">{formatDate(data.firstLogin)}</span>
+            </div>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] text-[#52525b]">{t.admin.lastLoginLabel}</span>
+              <span className="text-[10px] text-[#a1a1aa] tabular-nums">{formatDate(data.lastLogin)}</span>
+            </div>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] text-[#52525b]">{t.admin.lastActiveLabel}</span>
+              <span className="text-[10px] text-[#a1a1aa] tabular-nums">{formatDate(data.lastActive)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminPanel({ onClose }: { onClose: () => void }) {
   const { t } = useLocale();
   const [tab, setTab] = useState<"stats" | "unlimited">("stats");
@@ -79,6 +167,10 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [newId, setNewId] = useState("");
   const [actionMsg, setActionMsg] = useState("");
+  const [searchId, setSearchId] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const [userStats, setUserStats] = useState<UserStatsData | null>(null);
+  const [userStatsLoading, setUserStatsLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,6 +215,29 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     if (!id || !/^\d{17,20}$/.test(id)) return;
     await toggleUser(id);
     setNewId("");
+  };
+
+  const fetchUserStats = async (discordId: string) => {
+    setUserStatsLoading(true);
+    setSearchError("");
+    try {
+      const res = await fetch(`/api/admin/users/${discordId}/stats`);
+      if (!res.ok) {
+        setSearchError(t.admin.userNotFound);
+        setUserStatsLoading(false);
+        return;
+      }
+      setUserStats(await res.json() as UserStatsData);
+    } catch {
+      setSearchError(t.admin.userNotFound);
+    }
+    setUserStatsLoading(false);
+  };
+
+  const handleSearch = () => {
+    const id = searchId.trim();
+    if (!id || !/^\d{17,20}$/.test(id)) return;
+    fetchUserStats(id);
   };
 
   return (
@@ -184,10 +299,38 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
+              <p className="text-[10px] uppercase tracking-wider text-[#52525b] font-medium mb-2">{t.admin.userStats}</p>
+              <div className="flex gap-2 mb-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-[#3f3f46]" />
+                  <input
+                    value={searchId}
+                    onChange={(e) => { setSearchId(e.target.value); setSearchError(""); }}
+                    placeholder={t.admin.searchUserPlaceholder}
+                    className="w-full h-8 rounded-md bg-[#0a0a0b] border border-white/[0.06] pl-8 pr-3 text-xs text-[#e4e4e7] placeholder:text-[#3f3f46] outline-none focus:border-[#5865f2]/40"
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  disabled={userStatsLoading}
+                  className="h-8 px-3 rounded-md bg-[#5865f2] text-white text-xs font-medium hover:bg-[#4752c4] transition-colors disabled:opacity-50"
+                >
+                  {t.admin.searchUser}
+                </button>
+              </div>
+              {searchError && <p className="text-[10px] text-red-400 mb-2">{searchError}</p>}
+            </div>
+
+            <div>
               <p className="text-[10px] uppercase tracking-wider text-[#52525b] font-medium mb-2">{t.admin.recentUsers}</p>
               <div className="space-y-0.5">
                 {stats.recentUsers.map((u) => (
-                  <div key={u.discordId} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/[0.03] transition-colors">
+                  <button
+                    key={u.discordId}
+                    onClick={() => fetchUserStats(u.discordId)}
+                    className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
+                  >
                     {u.avatar ? (
                       <img src={u.avatar} alt="" className="size-6 rounded-full shrink-0" />
                     ) : (
@@ -206,7 +349,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
                       </div>
                     </div>
                     <span className="text-[10px] text-[#52525b] shrink-0 tabular-nums">{timeAgo(u.lastLogin)}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -258,6 +401,9 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
           </div>
         ) : null}
       </div>
+      {userStats && (
+        <UserStatsModal data={userStats} onClose={() => setUserStats(null)} />
+      )}
     </div>
   );
 }
