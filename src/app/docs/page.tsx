@@ -1,6 +1,7 @@
 "use client";
 
-import { Cat, ArrowLeft, Bot, Layers, Box, Keyboard, Share2, MessageSquare, Palette, Zap, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Cat, ArrowLeft, Bot, Layers, Box, Keyboard, Share2, MessageSquare, Palette, Zap, Globe, Send, HelpCircle, ChevronDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
 
@@ -29,9 +30,9 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SectionCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function SectionCard({ id, icon, title, children }: { id?: string; icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-white/[0.06] bg-[#111113] p-5">
+    <section id={id} className="rounded-lg border border-white/[0.06] bg-[#111113] p-5 scroll-mt-14">
       <div className="flex items-center gap-2.5 mb-4">
         <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#5865f2]/10">
           {icon}
@@ -45,6 +46,29 @@ function SectionCard({ icon, title, children }: { icon: React.ReactNode; title: 
   );
 }
 
+function CollapsibleSection({ id, icon, title, children }: { id?: string; icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section id={id} className="rounded-lg border border-white/[0.06] bg-[#111113] p-5 scroll-mt-14">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2.5 text-left"
+      >
+        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#5865f2]/10">
+          {icon}
+        </div>
+        <h2 className="text-base font-bold text-[#e4e4e7] flex-1">{title}</h2>
+        <ChevronDown className={`size-4 text-[#52525b] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="space-y-3 text-sm text-[#a1a1aa] leading-relaxed mt-4">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function LimitRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
@@ -54,11 +78,55 @@ function LimitRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function FaqItem({ q, a }: { q: string; a: string }) {
+  return (
+    <div className="rounded-md bg-white/[0.02] border border-white/[0.04] px-4 py-3">
+      <p className="text-[13px] font-semibold text-[#e4e4e7] mb-1">{q}</p>
+      <p className="text-sm text-[#a1a1aa]"><Fmt text={a} /></p>
+    </div>
+  );
+}
+
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-10 h-10 rounded-full bg-[#5865f2] text-white shadow-lg shadow-black/40 hover:bg-[#4752c4] transition-all animate-in fade-in duration-200"
+    >
+      <ArrowUp className="size-4" />
+    </button>
+  );
+}
+
 export default function DocsPage() {
   const { t, locale, setLocale } = useLocale();
 
+  const toc = [
+    { id: "quick-start", label: t.docs.tocQuickStart },
+    { id: "classic", label: t.docs.tocClassic },
+    { id: "v2", label: t.docs.tocV2 },
+    { id: "ai", label: t.docs.tocAi },
+    { id: "markdown", label: t.docs.tocMarkdown },
+    { id: "shortcuts", label: t.docs.tocShortcuts },
+    { id: "sharing", label: t.docs.tocSharing },
+    { id: "json", label: t.docs.tocJson },
+    { id: "webhooks", label: t.docs.tocWebhooks },
+    { id: "limits", label: t.docs.tocLimits },
+    { id: "faq", label: t.docs.tocFaq },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-[#09090b] scroll-smooth">
       <header className="sticky top-0 z-50 flex h-10 items-center justify-between border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-md px-4">
         <Link
           href="/"
@@ -92,14 +160,28 @@ export default function DocsPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-10">
-        <div className="mb-10">
+        <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-white tracking-tight mb-2">{t.docs.title}</h1>
           <p className="text-sm text-[#71717a]">{t.docs.subtitle}</p>
         </div>
 
+        <div className="mb-8 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+          <div className="flex gap-1.5">
+            {toc.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className="shrink-0 rounded-full px-3 py-1 text-[11px] font-medium bg-white/[0.04] text-[#71717a] hover:text-white hover:bg-white/[0.08] transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-4">
 
-          <SectionCard icon={<Zap className="size-4 text-[#5865f2]" />} title={t.docs.quickStartTitle}>
+          <SectionCard id="quick-start" icon={<Zap className="size-4 text-[#5865f2]" />} title={t.docs.quickStartTitle}>
             <ol className="list-decimal list-inside space-y-2 text-[#a1a1aa]">
               <li><Fmt text={t.docs.quickStart1} /></li>
               <li><Fmt text={t.docs.quickStart2} /></li>
@@ -107,7 +189,7 @@ export default function DocsPage() {
             </ol>
           </SectionCard>
 
-          <SectionCard icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.classicTitle}>
+          <SectionCard id="classic" icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.classicTitle}>
             <p><Fmt text={t.docs.classicDesc} /></p>
             <p><Fmt text={t.docs.classicFields} /></p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
@@ -120,9 +202,12 @@ export default function DocsPage() {
               <li><Fmt text={t.docs.classicFieldImages} /></li>
               <li><Fmt text={t.docs.classicFieldTimestamp} /></li>
             </ul>
+            <div className="rounded-md bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-[12px] text-[#71717a]">
+              <Fmt text={t.docs.classicClickable} />
+            </div>
           </SectionCard>
 
-          <SectionCard icon={<Box className="size-4 text-[#5865f2]" />} title={t.docs.v2Title}>
+          <SectionCard id="v2" icon={<Box className="size-4 text-[#5865f2]" />} title={t.docs.v2Title}>
             <p><Fmt text={t.docs.v2Desc} /></p>
             <p><Fmt text={t.docs.v2Types} /></p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
@@ -138,7 +223,7 @@ export default function DocsPage() {
             </div>
           </SectionCard>
 
-          <SectionCard icon={<Bot className="size-4 text-[#5865f2]" />} title={t.docs.aiTitle}>
+          <SectionCard id="ai" icon={<Bot className="size-4 text-[#5865f2]" />} title={t.docs.aiTitle}>
             <p>{t.docs.aiDesc}</p>
             <p className="font-medium text-[#e4e4e7]">{t.docs.aiCanDo}</p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
@@ -149,6 +234,7 @@ export default function DocsPage() {
               <li>{t.docs.aiSuggest}</li>
               <li>{t.docs.aiRestyle}</li>
               <li>{t.docs.aiEmoji}</li>
+              <li><Fmt text={t.docs.aiBothModes} /></li>
             </ul>
             <p className="font-medium text-[#e4e4e7]">{t.docs.aiHow}</p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
@@ -162,7 +248,7 @@ export default function DocsPage() {
             </div>
           </SectionCard>
 
-          <SectionCard icon={<Palette className="size-4 text-[#5865f2]" />} title={t.docs.markdownTitle}>
+          <CollapsibleSection id="markdown" icon={<Palette className="size-4 text-[#5865f2]" />} title={t.docs.markdownTitle}>
             <p><Fmt text={t.docs.markdownDesc} /></p>
             <p className="font-medium text-[#e4e4e7]">{t.docs.markdownBasic}</p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
@@ -186,9 +272,9 @@ export default function DocsPage() {
             <p>
               <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<:name:id>"}</code> {t.docs.markdownEmoji}, <code className="text-xs bg-white/[0.06] rounded px-1 py-0.5 font-mono text-[#e4e4e7]">{"<a:name:id>"}</code> {t.docs.markdownAnimEmoji}
             </p>
-          </SectionCard>
+          </CollapsibleSection>
 
-          <SectionCard icon={<Keyboard className="size-4 text-[#5865f2]" />} title={t.docs.shortcutsTitle}>
+          <CollapsibleSection id="shortcuts" icon={<Keyboard className="size-4 text-[#5865f2]" />} title={t.docs.shortcutsTitle}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[#a1a1aa]">{t.docs.shortcutsUndo}</span>
@@ -200,16 +286,16 @@ export default function DocsPage() {
               </div>
             </div>
             <p className="text-[12px] text-[#52525b] mt-2">{t.docs.shortcutsHistory}</p>
-          </SectionCard>
+          </CollapsibleSection>
 
-          <SectionCard icon={<Share2 className="size-4 text-[#5865f2]" />} title={t.docs.sharingTitle}>
+          <SectionCard id="sharing" icon={<Share2 className="size-4 text-[#5865f2]" />} title={t.docs.sharingTitle}>
             <p className="font-medium text-[#e4e4e7]">{t.docs.shareLink}</p>
             <p><Fmt text={t.docs.shareLinkDesc} /></p>
             <p className="font-medium text-[#e4e4e7]">{t.docs.saveProfile}</p>
             <p><Fmt text={t.docs.saveProfileDesc} /></p>
           </SectionCard>
 
-          <SectionCard icon={<MessageSquare className="size-4 text-[#5865f2]" />} title={t.docs.jsonTitle}>
+          <SectionCard id="json" icon={<MessageSquare className="size-4 text-[#5865f2]" />} title={t.docs.jsonTitle}>
             <p><Fmt text={t.docs.jsonDesc} /></p>
             <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
               <li><Fmt text={t.docs.jsonEmbedcat} /></li>
@@ -219,8 +305,18 @@ export default function DocsPage() {
             <p><Fmt text={t.docs.jsonImport} /></p>
           </SectionCard>
 
-          <section className="rounded-lg border border-white/[0.06] bg-[#111113] p-5">
-            <h2 className="text-base font-bold text-[#e4e4e7] mb-4">{t.docs.limitsTitle}</h2>
+          <SectionCard id="webhooks" icon={<Send className="size-4 text-[#5865f2]" />} title={t.docs.webhooksTitle}>
+            <p><Fmt text={t.docs.webhooksDesc} /></p>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.webhooksCreate}</p>
+            <ol className="list-decimal list-inside space-y-2 text-[#a1a1aa]">
+              <li><Fmt text={t.docs.webhooksStep1} /></li>
+              <li><Fmt text={t.docs.webhooksStep2} /></li>
+              <li><Fmt text={t.docs.webhooksStep3} /></li>
+              <li><Fmt text={t.docs.webhooksStep4} /></li>
+            </ol>
+          </SectionCard>
+
+          <CollapsibleSection id="limits" icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.limitsTitle}>
             <div className="text-sm">
               <LimitRow label={t.docs.limitContent} value="2,000 chars" />
               <LimitRow label={t.docs.limitEmbeds} value="10" />
@@ -235,7 +331,15 @@ export default function DocsPage() {
               <LimitRow label={t.docs.limitUsername} value="80 chars" />
               <LimitRow label={t.docs.limitMedia} value="10" />
             </div>
-          </section>
+          </CollapsibleSection>
+
+          <SectionCard id="faq" icon={<HelpCircle className="size-4 text-[#5865f2]" />} title={t.docs.faqTitle}>
+            <div className="space-y-2">
+              <FaqItem q={t.docs.faqNoSend} a={t.docs.faqNoSendDesc} />
+              <FaqItem q={t.docs.faqNoImages} a={t.docs.faqNoImagesDesc} />
+              <FaqItem q={t.docs.faqV2Broken} a={t.docs.faqV2BrokenDesc} />
+            </div>
+          </SectionCard>
 
         </div>
 
@@ -268,6 +372,8 @@ export default function DocsPage() {
           </div>
         </div>
       </main>
+
+      <ScrollToTop />
     </div>
   );
 }
