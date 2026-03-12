@@ -165,13 +165,13 @@ export default function DocsPage() {
           <p className="text-sm text-[#71717a]">{t.docs.subtitle}</p>
         </div>
 
-        <div className="mb-8 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+        <div className="mb-8 overflow-x-auto pb-2 -mx-4 px-4 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
           <div className="flex gap-1.5">
             {toc.map((item) => (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className="shrink-0 rounded-full px-3 py-1 text-[11px] font-medium bg-white/[0.04] text-[#71717a] hover:text-white hover:bg-white/[0.08] transition-colors"
+                className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium bg-white/[0.04] text-[#71717a] hover:text-white hover:bg-white/[0.08] transition-colors"
               >
                 {item.label}
               </a>
