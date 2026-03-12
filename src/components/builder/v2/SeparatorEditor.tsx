@@ -45,7 +45,7 @@ export function SeparatorEditor({
           }
         >
           <SelectTrigger className="h-7 w-24 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-            <SelectValue />
+            <SelectValue>{component.spacing === 1 ? t.v2.small : t.v2.large}</SelectValue>
           </SelectTrigger>
           <SelectContent className="border-white/[0.08] bg-[#111113]">
             <SelectItem value="1" className="text-[#e4e4e7] text-xs">

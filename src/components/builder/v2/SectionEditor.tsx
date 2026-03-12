@@ -124,7 +124,7 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
           <label className="text-xs text-[#71717a] shrink-0">{t.v2.accessory}</label>
           <Select value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
             <SelectTrigger className="h-7 w-32 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-              <SelectValue />
+              <SelectValue>{accessoryType === "none" ? t.v2.none : accessoryType === "button" ? t.v2.button : t.v2.thumbnail}</SelectValue>
             </SelectTrigger>
             <SelectContent className="border-white/[0.08] bg-[#111113]">
               <SelectItem value="none" className="text-[#e4e4e7] text-xs">
