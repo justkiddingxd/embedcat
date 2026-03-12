@@ -123,14 +123,56 @@ export async function POST(req: Request) {
     content: m.content,
   }));
 
-  const result = streamText({
-    model: anthropic(MODEL_ID),
-    system: systemWithContext,
-    messages,
-  });
+  const MAX_RETRIES = 2;
+
+  // Wrap stream creation with retry — if the stream fails before producing
+  // any text (e.g. gateway returns 400), we retry up to MAX_RETRIES times.
+  async function createStream(): Promise<{ textStream: AsyncIterable<string> }> {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const r = streamText({
+        model: anthropic(MODEL_ID),
+        system: systemWithContext,
+        messages,
+      });
+      try {
+        // Try to read first chunk to verify the stream actually works
+        const reader = r.textStream[Symbol.asyncIterator]();
+        const first = await reader.next();
+        // Re-wrap into an async iterable that yields the first chunk + rest
+        async function* replayStream() {
+          if (!first.done) yield first.value;
+          while (true) {
+            const next = await reader.next();
+            if (next.done) break;
+            yield next.value;
+          }
+        }
+        return { textStream: replayStream() };
+      } catch (err) {
+        console.error(`[chat] Stream attempt ${attempt + 1} failed:`, err);
+        if (attempt < MAX_RETRIES) {
+          await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new Error("All stream attempts exhausted");
+  }
+
+  let stream;
+  try {
+    stream = await createStream();
+  } catch (err) {
+    console.error("[chat] All stream attempts failed:", err);
+    return Response.json(
+      { error: "AI is temporarily unavailable, please try again" },
+      { status: 502 }
+    );
+  }
 
   const encoder = new TextEncoder();
-  const textStream = result.textStream;
+  const textStream = stream.textStream;
   let fullText = "";
   let buffer = "";
   let insideCodeBlock = false;
@@ -225,7 +267,19 @@ export async function POST(req: Request) {
           }).catch(() => void 0),
         ]);
       } catch (err) {
-        controller.error(err);
+        console.error("[chat] Stream processing error:", {
+          error: err instanceof Error ? err.message : err,
+          statusCode: (err as { statusCode?: number }).statusCode,
+          responseBody: (err as { responseBody?: string }).responseBody,
+          sessionId: chatSessionId,
+          messageCount: messages.length,
+        });
+        // If we already sent some text, close gracefully
+        if (fullText.length > 0) {
+          controller.close();
+        } else {
+          controller.error(err);
+        }
       }
     },
   });
@@ -240,6 +294,7 @@ export async function POST(req: Request) {
   });
   return response;
   } catch (err) {
+    console.error("[chat] Unhandled error:", err);
     const msg = err instanceof Error ? err.message : "AI request failed";
     return Response.json({ error: msg }, { status: 502 });
   }
