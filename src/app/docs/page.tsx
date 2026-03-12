@@ -46,8 +46,8 @@ function SectionCard({ id, icon, title, children }: { id?: string; icon: React.R
   );
 }
 
-function CollapsibleSection({ id, icon, title, children }: { id?: string; icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function CollapsibleSection({ id, icon, title, children, defaultOpen = true }: { id?: string; icon: React.ReactNode; title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section id={id} className="rounded-lg border border-white/[0.06] bg-[#111113] p-5 scroll-mt-14">
       <button
@@ -316,7 +316,7 @@ export default function DocsPage() {
             </ol>
           </SectionCard>
 
-          <CollapsibleSection id="limits" icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.limitsTitle}>
+          <CollapsibleSection id="limits" icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.limitsTitle} defaultOpen={false}>
             <div className="text-sm">
               <LimitRow label={t.docs.limitContent} value="2,000 chars" />
               <LimitRow label={t.docs.limitEmbeds} value="10" />
