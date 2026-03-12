@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Code2, Copy, Check, Upload } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 type JsonFormat = "embedcat" | "nadeko" | "discohook";
 
@@ -30,6 +31,7 @@ const FORMAT_LABELS: Record<JsonFormat, string> = {
 export function JsonEditor() {
   const store = useBuilderStore();
   const { t } = useLocale();
+  const { toast } = useToast();
   const { mode, content, embeds, components, webhook, jsonEditorOpen, setJsonEditorOpen, importFromJson } = store;
   const [jsonText, setJsonText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -62,6 +64,7 @@ export function JsonEditor() {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(jsonText);
     setCopied(true);
+    toast(t.toast.copied);
     setTimeout(() => setCopied(false), 2000);
   };
 

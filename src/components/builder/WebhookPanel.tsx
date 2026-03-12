@@ -7,20 +7,25 @@ import { buildClassicPayload, buildComponentsV2Payload, sendWebhookMessage } fro
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Send, ChevronDown, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Send, ChevronDown, Loader2, CheckCircle2, AlertCircle, Check } from "lucide-react";
 import { LIMITS } from "@/types/discord";
+import { useToast } from "@/components/ui/toast";
 
 export function WebhookPanel() {
   const { webhook, setWebhook, mode, content, embeds, components } = useBuilderStore();
   const { t } = useLocale();
+  const { toast } = useToast();
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
+
+  const [showCheck, setShowCheck] = useState(false);
 
   const handleSend = async () => {
     if (!webhook.url) return;
     setSending(true);
     setResult(null);
+    setShowCheck(false);
 
     const payload =
       mode === "classic"
@@ -32,7 +37,11 @@ export function WebhookPanel() {
     setSending(false);
 
     if (res.success) {
-      setTimeout(() => setResult(null), 3000);
+      setShowCheck(true);
+      toast(t.toast.embedSent);
+      setTimeout(() => { setShowCheck(false); setResult(null); }, 2000);
+    } else {
+      toast(res.error || t.toast.sendError, "error");
     }
   };
 
@@ -51,14 +60,16 @@ export function WebhookPanel() {
           onClick={handleSend}
           disabled={sending || !isValidUrl}
           size="sm"
-          className="h-7 gap-1.5 bg-[#5865f2] px-3 text-xs text-white hover:bg-[#4752c4] disabled:opacity-50 transition-colors"
+          className={`h-7 gap-1.5 px-3 text-xs text-white disabled:opacity-50 transition-colors ${showCheck ? "bg-emerald-600 hover:bg-emerald-600" : "bg-[#5865f2] hover:bg-[#4752c4]"}`}
         >
           {sending ? (
             <Loader2 className="size-3 animate-spin" />
+          ) : showCheck ? (
+            <Check className="size-3" />
           ) : (
             <Send className="size-3" />
           )}
-          {t.webhook.send}
+          {showCheck ? t.webhook.sent : t.webhook.send}
         </Button>
       </div>
 

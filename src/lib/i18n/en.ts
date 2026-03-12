@@ -198,6 +198,13 @@ export const en = {
     tryAgain: "Try again",
     clearDataReload: "Clear data & reload",
   },
+  toast: {
+    embedSent: "Embed sent!",
+    linkCopied: "Link copied!",
+    saved: "Saved!",
+    copied: "Copied!",
+    sendError: "Failed to send",
+  },
   footer: {
     builtWith: "Built with",
     by: "by",

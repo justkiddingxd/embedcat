@@ -4,7 +4,25 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "embed.cat — Discord Embed Builder",
-  description: "Build beautiful Discord embeds and Components V2 messages. Send via webhook instantly.",
+  description: "Build beautiful Discord embeds and Components V2 messages. AI-powered. Send via webhook instantly.",
+  metadataBase: new URL("https://embed.cat"),
+  openGraph: {
+    title: "embed.cat — Discord Embed Builder",
+    description: "Build beautiful Discord embeds and Components V2 messages. AI-powered. Send via webhook instantly.",
+    url: "https://embed.cat",
+    siteName: "embed.cat",
+    type: "website",
+    images: [{ url: "https://rin.ms/embedcat.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "embed.cat — Discord Embed Builder",
+    description: "Build beautiful Discord embeds and Components V2 messages. AI-powered. Send via webhook instantly.",
+    images: ["https://rin.ms/embedcat.png"],
+  },
+  other: {
+    "theme-color": "#5865f2",
+  },
 };
 
 export default function RootLayout({

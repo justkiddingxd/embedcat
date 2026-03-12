@@ -200,6 +200,13 @@ export const ru: typeof en = {
     tryAgain: "Попробовать снова",
     clearDataReload: "Очистить данные",
   },
+  toast: {
+    embedSent: "Эмбед отправлен!",
+    linkCopied: "Ссылка скопирована!",
+    saved: "Сохранено!",
+    copied: "Скопировано!",
+    sendError: "Не удалось отправить",
+  },
   footer: {
     builtWith: "Сделано с",
     by: "от",

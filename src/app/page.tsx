@@ -30,6 +30,7 @@ import type { DiscordEmbed, EmbedField, TopLevelComponent } from "@/types/discor
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { ChatWidget } from "@/components/chat/ChatWidget";
+import { useToast } from "@/components/ui/toast";
 
 const STORAGE_KEY = "embedcat-preview-width";
 const MIN_WIDTH = 280;
@@ -162,6 +163,7 @@ function ModeToggle({ mode, onModeChange, labels }: { mode: string; onModeChange
 function HomeContent() {
   const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload, undo, redo, canUndo, canRedo } = useBuilderStore();
   const { t } = useLocale();
+  const { toast } = useToast();
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [previewWidth, setPreviewWidth] = useState(DEFAULT_WIDTH);
@@ -229,6 +231,7 @@ function HomeContent() {
       const url = `${window.location.origin}?id=${data.id}`;
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
+      toast(t.toast.linkCopied);
       setTimeout(() => setShareCopied(false), 2000);
     } catch { void 0; }
     setShareLoading(false);
@@ -257,6 +260,7 @@ function HomeContent() {
         setCurrentSavedId(data.id);
       }
       setSaveStatus("saved");
+      toast(t.toast.saved);
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch { void 0; setSaveStatus("idle"); }
   };
