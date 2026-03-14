@@ -6,7 +6,7 @@ import { Bot, X, Send, List, Plus, Trash2, Check, Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useBuilderStore } from "@/store/builder-store";
-import { buildClassicPayload, buildComponentsV2Payload } from "@/lib/build-payload";
+import { buildClassicPayload, buildComponentsV2Payload, extractActionsFromPayload } from "@/lib/build-payload";
 import type { BuilderMode } from "@/types/discord";
 
 const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
@@ -89,7 +89,7 @@ function renderInline(text: string, startKey: number): ReactNode[] {
 export function ChatWidget() {
   const { data: authSession } = useSession();
   const { t } = useLocale();
-  const { mode, content, embeds, components, webhook, loadFromPayload } = useBuilderStore();
+  const { mode, content, embeds, components, webhook, loadFromPayload, importButtonActions } = useBuilderStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -486,12 +486,19 @@ export function ChatWidget() {
           targetMode = "components_v2";
         }
         loadFromPayload(targetMode, payload);
+
+        // Import action chains from _actions on buttons
+        const extracted = extractActionsFromPayload(payload);
+        if (Object.keys(extracted).length > 0) {
+          importButtonActions(extracted);
+        }
+
         setAppliedBlocks((prev) => new Set(prev).add(jsonStr));
       } catch {
         void 0;
       }
     },
-    [loadFromPayload]
+    [loadFromPayload, importButtonActions]
   );
 
   const formatDate = (dateStr: string) => {
