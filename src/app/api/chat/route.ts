@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +12,9 @@ import {
   MAX_CONTEXT_MESSAGES,
   isUnlimitedUser,
 } from "@/lib/ai";
+
+const SUMMARIZE_THRESHOLD = 14; // when history hits this, summarize older messages
+const KEEP_RECENT = 6; // keep last N messages as-is
 
 export const maxDuration = 60;
 
@@ -111,17 +114,69 @@ export async function POST(req: Request) {
     where: { sessionId: chatSessionId },
     orderBy: { createdAt: "asc" },
     take: MAX_CONTEXT_MESSAGES,
-    select: { role: true, content: true },
+    select: { id: true, role: true, content: true },
   });
 
   const systemWithContext = embedContext
     ? `${SYSTEM_PROMPT}\n\n## Current user embed state:\n\`\`\`json\n${embedContext}\n\`\`\``
     : SYSTEM_PROMPT;
 
-  let messages = history.map((m: { role: string; content: string }) => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
+  // Preventive summarization: compress old messages into a summary
+  let messages: { role: "user" | "assistant" | "system"; content: string }[];
+  if (history.length >= SUMMARIZE_THRESHOLD) {
+    const oldMessages = history.slice(0, -KEEP_RECENT);
+    const recentMessages = history.slice(-KEEP_RECENT);
+
+    // Check if first message is already a summary
+    const alreadySummarized = oldMessages[0]?.content?.startsWith("[Summary of previous conversation:");
+    
+    let summary: string;
+    if (alreadySummarized && oldMessages.length <= 3) {
+      // Already compact enough
+      summary = oldMessages[0].content;
+    } else {
+      try {
+        const convo = oldMessages.map(m => `${m.role}: ${m.content}`).join("\n");
+        const { text } = await generateText({
+          model: anthropic(MODEL_ID),
+          system: "Summarize this conversation in 2-3 sentences. Preserve key details: URLs, emoji IDs, style preferences, specific requests. Be concise. Start with: [Summary of previous conversation:",
+          messages: [{ role: "user", content: convo }],
+        });
+        summary = text;
+        console.log(`[chat] Summarized ${oldMessages.length} messages into ${summary.length} chars`);
+      } catch (err) {
+        console.error("[chat] Summarization failed, using truncation:", err);
+        summary = `[Summary of previous conversation: ${oldMessages.length} messages about Discord embed creation]`;
+      }
+
+      // Replace old messages in DB with summary
+      const oldIds = oldMessages.map(m => m.id);
+      await prisma.chatMessage.deleteMany({
+        where: { id: { in: oldIds } },
+      });
+      await prisma.chatMessage.create({
+        data: {
+          sessionId: chatSessionId!,
+          role: "assistant",
+          content: summary,
+          createdAt: new Date(0), // oldest possible so it sorts first
+        },
+      });
+    }
+
+    messages = [
+      { role: "assistant", content: summary },
+      ...recentMessages.map(m => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    ];
+  } else {
+    messages = history.map((m: { id: string; role: string; content: string }) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+  }
 
   const MAX_RETRIES = 2;
 
