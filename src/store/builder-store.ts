@@ -200,6 +200,16 @@ function createWelcomeContainer(locale?: "en" | "ru"): ContainerComponent {
   };
 }
 
+export interface ActionItem {
+  id: string;
+  type: string;
+  config: Record<string, unknown>;
+}
+
+export interface ButtonActionConfig {
+  actions: ActionItem[];
+}
+
 type Snapshot = {
   content: string;
   embeds: DiscordEmbed[];
@@ -224,6 +234,7 @@ interface BuilderState {
   embeds: DiscordEmbed[];
   components: TopLevelComponent[];
   jsonEditorOpen: boolean;
+  buttonActions: Record<string, ButtonActionConfig>;
 
   setMode: (mode: BuilderMode) => void;
   setWebhook: (webhook: Partial<WebhookConfig>) => void;
@@ -255,6 +266,14 @@ interface BuilderState {
   loadFromPayload: (mode: BuilderMode, payload: Record<string, unknown>) => void;
   reset: () => void;
 
+  getButtonActions: (buttonId: string) => ActionItem[];
+  setButtonActions: (buttonId: string, actions: ActionItem[]) => void;
+  addButtonAction: (buttonId: string, action: ActionItem) => void;
+  removeButtonAction: (buttonId: string, actionId: string) => void;
+  updateButtonAction: (buttonId: string, actionId: string, updates: Partial<ActionItem>) => void;
+  reorderButtonActions: (buttonId: string, fromIndex: number, toIndex: number) => void;
+  clearButtonActions: (buttonId: string) => void;
+
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
@@ -280,6 +299,7 @@ export const useBuilderStore = create<BuilderState>()(
   embeds: [createWelcomeEmbed()],
   components: [createWelcomeContainer()],
   jsonEditorOpen: false,
+  buttonActions: {},
 
   setMode: (mode) => rawSet({ mode }),
   setWebhook: (webhook) =>
@@ -533,6 +553,69 @@ export const useBuilderStore = create<BuilderState>()(
     skipSnapshot = false;
   },
 
+  getButtonActions: (buttonId) => {
+    return get().buttonActions[buttonId]?.actions ?? [];
+  },
+
+  setButtonActions: (buttonId, actions) =>
+    rawSet((s) => ({
+      buttonActions: { ...s.buttonActions, [buttonId]: { actions } },
+    })),
+
+  addButtonAction: (buttonId, action) =>
+    rawSet((s) => {
+      const current = s.buttonActions[buttonId]?.actions ?? [];
+      return {
+        buttonActions: {
+          ...s.buttonActions,
+          [buttonId]: { actions: [...current, action] },
+        },
+      };
+    }),
+
+  removeButtonAction: (buttonId, actionId) =>
+    rawSet((s) => {
+      const current = s.buttonActions[buttonId]?.actions ?? [];
+      return {
+        buttonActions: {
+          ...s.buttonActions,
+          [buttonId]: { actions: current.filter((a) => a.id !== actionId) },
+        },
+      };
+    }),
+
+  updateButtonAction: (buttonId, actionId, updates) =>
+    rawSet((s) => {
+      const current = s.buttonActions[buttonId]?.actions ?? [];
+      return {
+        buttonActions: {
+          ...s.buttonActions,
+          [buttonId]: {
+            actions: current.map((a) => (a.id === actionId ? { ...a, ...updates } : a)),
+          },
+        },
+      };
+    }),
+
+  reorderButtonActions: (buttonId, fromIndex, toIndex) =>
+    rawSet((s) => {
+      const current = [...(s.buttonActions[buttonId]?.actions ?? [])];
+      const [moved] = current.splice(fromIndex, 1);
+      current.splice(toIndex, 0, moved);
+      return {
+        buttonActions: {
+          ...s.buttonActions,
+          [buttonId]: { actions: current },
+        },
+      };
+    }),
+
+  clearButtonActions: (buttonId) =>
+    rawSet((s) => {
+      const { [buttonId]: _, ...rest } = s.buttonActions;
+      return { buttonActions: rest };
+    }),
+
   canUndo: () => undoStack.length > 0,
   canRedo: () => redoStack.length > 0,
   };
@@ -545,6 +628,7 @@ export const useBuilderStore = create<BuilderState>()(
         content: state.content,
         embeds: state.embeds,
         components: state.components,
+        buttonActions: state.buttonActions,
       }),
     }
   )

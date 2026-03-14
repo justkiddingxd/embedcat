@@ -52,12 +52,11 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dropdown,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+} from "@/components/ui/dropdown";
 import { TextDisplayEditor } from "./v2/TextDisplayEditor";
 import { SectionEditor } from "./v2/SectionEditor";
 import { SeparatorEditor } from "./v2/SeparatorEditor";
@@ -357,46 +356,44 @@ function AddChildButton({
   };
 
   return (
-    <Select value="" onValueChange={addChild}>
-      <SelectTrigger className="w-full h-8 border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#a1a1aa] hover:border-white/[0.12] text-xs transition-colors">
-        <div className="flex items-center gap-1.5">
-          <Plus className="size-3" />
-          <span>{t.v2.addChildComponent}</span>
-        </div>
-      </SelectTrigger>
-      <SelectContent className="border-white/[0.08] bg-[#111113]">
-        <SelectItem value="text" className="text-[#e4e4e7] text-xs">
+    <Dropdown value="" onValueChange={addChild}>
+      <DropdownTrigger className="border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#a1a1aa] hover:border-white/[0.12] hover:bg-transparent text-xs">
+        <Plus className="size-3" />
+        <span>{t.v2.addChildComponent}</span>
+      </DropdownTrigger>
+      <DropdownContent>
+        <DropdownItem value="text">
           <span className="flex items-center gap-2">
             <Type className="size-3 text-[#57f287]" />
             {t.v2.textDisplay}
           </span>
-        </SelectItem>
-        <SelectItem value="section" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="section">
           <span className="flex items-center gap-2">
             <SplitSquareHorizontal className="size-3 text-[#fee75c]" />
             {t.v2.section}
           </span>
-        </SelectItem>
-        <SelectItem value="separator" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="separator">
           <span className="flex items-center gap-2">
             <Minus className="size-3 text-[#9b59b6]" />
             {t.v2.separator}
           </span>
-        </SelectItem>
-        <SelectItem value="actionrow" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="actionrow">
           <span className="flex items-center gap-2">
             <MousePointerClick className="size-3 text-[#eb459e]" />
             {t.v2.actionRow}
           </span>
-        </SelectItem>
-        <SelectItem value="mediagallery" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="mediagallery">
           <span className="flex items-center gap-2">
             <ImageIcon className="size-3 text-[#ed4245]" />
             {t.v2.mediaGallery}
           </span>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+        </DropdownItem>
+      </DropdownContent>
+    </Dropdown>
   );
 }
 
@@ -593,52 +590,50 @@ function AddTopLevelButton() {
   };
 
   return (
-    <Select value="" onValueChange={addTopLevel}>
-      <SelectTrigger className="w-full h-9 border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 transition-colors text-sm">
-        <div className="flex items-center gap-1.5">
-          <Plus className="size-3.5" />
-          <span>{t.v2.addComponent}</span>
-        </div>
-      </SelectTrigger>
-      <SelectContent className="border-white/[0.08] bg-[#111113]">
-        <SelectItem value="container" className="text-[#e4e4e7] text-xs">
+    <Dropdown value="" onValueChange={addTopLevel}>
+      <DropdownTrigger className="h-9 border-dashed border-white/[0.08] bg-transparent text-[#71717a] hover:text-[#5865f2] hover:border-[#5865f2]/40 hover:bg-transparent text-sm">
+        <Plus className="size-3.5" />
+        <span>{t.v2.addComponent}</span>
+      </DropdownTrigger>
+      <DropdownContent>
+        <DropdownItem value="container">
           <span className="flex items-center gap-2">
             <Box className="size-3 text-[#5865f2]" />
             {t.v2.container}
           </span>
-        </SelectItem>
-        <SelectItem value="text" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="text">
           <span className="flex items-center gap-2">
             <Type className="size-3 text-[#57f287]" />
             {t.v2.textDisplay}
           </span>
-        </SelectItem>
-        <SelectItem value="section" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="section">
           <span className="flex items-center gap-2">
             <SplitSquareHorizontal className="size-3 text-[#fee75c]" />
             {t.v2.section}
           </span>
-        </SelectItem>
-        <SelectItem value="separator" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="separator">
           <span className="flex items-center gap-2">
             <Minus className="size-3 text-[#9b59b6]" />
             {t.v2.separator}
           </span>
-        </SelectItem>
-        <SelectItem value="actionrow" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="actionrow">
           <span className="flex items-center gap-2">
             <MousePointerClick className="size-3 text-[#eb459e]" />
             {t.v2.actionRow}
           </span>
-        </SelectItem>
-        <SelectItem value="mediagallery" className="text-[#e4e4e7] text-xs">
+        </DropdownItem>
+        <DropdownItem value="mediagallery">
           <span className="flex items-center gap-2">
             <ImageIcon className="size-3 text-[#ed4245]" />
             {t.v2.mediaGallery}
           </span>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+        </DropdownItem>
+      </DropdownContent>
+    </Dropdown>
   );
 }
 

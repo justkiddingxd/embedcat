@@ -6,12 +6,11 @@ import { Input } from "@/components/ui/input";
 import { MarkdownTextarea } from "../MarkdownTextarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dropdown,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+} from "@/components/ui/dropdown";
 import { ButtonEditor } from "./ButtonEditor";
 import { createTextDisplay, createButton, createThumbnail } from "@/store/builder-store";
 import {
@@ -122,22 +121,16 @@ export function SectionEditor({ component, onChange }: SectionEditorProps) {
       <div className="border-t border-white/[0.04] pt-2 space-y-1.5">
         <div className="flex items-center gap-3">
           <label className="text-xs text-[#71717a] shrink-0">{t.v2.accessory}</label>
-          <Select value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
-            <SelectTrigger className="h-7 w-32 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-              <SelectValue>{accessoryType === "none" ? t.v2.none : accessoryType === "button" ? t.v2.button : t.v2.thumbnail}</SelectValue>
-            </SelectTrigger>
-            <SelectContent className="border-white/[0.08] bg-[#111113]">
-              <SelectItem value="none" className="text-[#e4e4e7] text-xs">
-                {t.v2.none}
-              </SelectItem>
-              <SelectItem value="button" className="text-[#e4e4e7] text-xs">
-                {t.v2.button}
-              </SelectItem>
-              <SelectItem value="thumbnail" className="text-[#e4e4e7] text-xs">
-                {t.v2.thumbnail}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <Dropdown value={accessoryType} onValueChange={(val) => setAccessoryType(val)}>
+            <DropdownTrigger size="sm" className="w-32">
+              {accessoryType === "none" ? t.v2.none : accessoryType === "button" ? t.v2.button : t.v2.thumbnail}
+            </DropdownTrigger>
+            <DropdownContent>
+              <DropdownItem value="none">{t.v2.none}</DropdownItem>
+              <DropdownItem value="button">{t.v2.button}</DropdownItem>
+              <DropdownItem value="thumbnail">{t.v2.thumbnail}</DropdownItem>
+            </DropdownContent>
+          </Dropdown>
         </div>
 
         {accessory && accessory.type === ComponentType.Button && (

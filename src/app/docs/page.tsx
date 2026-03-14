@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Cat, ArrowLeft, Bot, Layers, Box, Keyboard, Share2, MessageSquare, Palette, Zap, Globe, Send, HelpCircle, ChevronDown, ArrowUp } from "lucide-react";
+import { Cat, ArrowLeft, Bot, Layers, Box, Keyboard, Share2, MessageSquare, Palette, Zap, Globe, Send, HelpCircle, ChevronDown, ArrowUp, MousePointerClick, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
 
@@ -121,6 +121,8 @@ export default function DocsPage() {
     { id: "sharing", label: t.docs.tocSharing },
     { id: "json", label: t.docs.tocJson },
     { id: "webhooks", label: t.docs.tocWebhooks },
+    { id: "bot-mode", label: t.docs.tocBotMode },
+    { id: "action-chains", label: t.docs.tocActionChains },
     { id: "limits", label: t.docs.tocLimits },
     { id: "faq", label: t.docs.tocFaq },
   ];
@@ -165,13 +167,13 @@ export default function DocsPage() {
           <p className="text-sm text-[#71717a]">{t.docs.subtitle}</p>
         </div>
 
-        <div className="mb-8 overflow-x-auto pb-2 -mx-4 px-4 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
-          <div className="flex gap-1.5">
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-1.5">
             {toc.map((item) => (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium bg-white/[0.04] text-[#71717a] hover:text-white hover:bg-white/[0.08] transition-colors"
+                className="rounded-full px-2.5 py-1 text-[11px] font-medium bg-white/[0.04] text-[#71717a] hover:text-white hover:bg-white/[0.08] transition-colors"
               >
                 {item.label}
               </a>
@@ -314,6 +316,77 @@ export default function DocsPage() {
               <li><Fmt text={t.docs.webhooksStep3} /></li>
               <li><Fmt text={t.docs.webhooksStep4} /></li>
             </ol>
+          </SectionCard>
+
+          <SectionCard id="bot-mode" icon={<Bot className="size-4 text-[#5865f2]" />} title={t.docs.botModeTitle}>
+            <p><Fmt text={t.docs.botModeDesc} /></p>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.botModeWhen}</p>
+            <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
+              <li><Fmt text={t.docs.botModeWhen1} /></li>
+              <li><Fmt text={t.docs.botModeWhen2} /></li>
+              <li><Fmt text={t.docs.botModeWhen3} /></li>
+            </ul>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.botModeSetup}</p>
+            <ol className="list-decimal list-inside space-y-2 text-[#a1a1aa]">
+              <li><Fmt text={t.docs.botModeStep1} /></li>
+              <li><Fmt text={t.docs.botModeStep2} /></li>
+              <li><Fmt text={t.docs.botModeStep3} /></li>
+              <li><Fmt text={t.docs.botModeStep4} /></li>
+            </ol>
+            <div className="rounded-md bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-[12px] text-[#71717a] space-y-1.5">
+              <p className="font-medium text-[#a1a1aa]">{t.docs.botModeInvite}</p>
+              <a
+                href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "1480407438258733056"}&permissions=268435456&scope=bot`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#5865f2] hover:text-[#7983f5] transition-colors text-[12px]"
+              >
+                <Link2 className="size-3" />
+                Add embed.cat Bot to your server
+              </a>
+            </div>
+            <div className="rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-[12px] text-amber-300">
+              <Fmt text={t.docs.botModePerms} />
+            </div>
+          </SectionCard>
+
+          <SectionCard id="action-chains" icon={<MousePointerClick className="size-4 text-[#5865f2]" />} title={t.docs.actionChainsTitle}>
+            <p><Fmt text={t.docs.actionChainsDesc} /></p>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.actionChainsSetup}</p>
+            <ol className="list-decimal list-inside space-y-2 text-[#a1a1aa]">
+              <li><Fmt text={t.docs.actionChainsStep1} /></li>
+              <li><Fmt text={t.docs.actionChainsStep2} /></li>
+              <li><Fmt text={t.docs.actionChainsStep3} /></li>
+              <li>{t.docs.actionChainsStep4}</li>
+            </ol>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.actionChainsTypes}</p>
+            <ul className="list-disc list-inside space-y-1 text-[#a1a1aa]">
+              <li><Fmt text={t.docs.actionTypeToggleRole} /></li>
+              <li><Fmt text={t.docs.actionTypeAddRole} /></li>
+              <li><Fmt text={t.docs.actionTypeRemoveRole} /></li>
+              <li><Fmt text={t.docs.actionTypeSendMessage} /></li>
+              <li><Fmt text={t.docs.actionTypeWait} /></li>
+              <li><Fmt text={t.docs.actionTypeCreateThread} /></li>
+              <li><Fmt text={t.docs.actionTypeDeleteMessage} /></li>
+              <li><Fmt text={t.docs.actionTypeStop} /></li>
+              <li><Fmt text={t.docs.actionTypeSendWebhook} /></li>
+              <li><Fmt text={t.docs.actionTypeDoNothing} /></li>
+            </ul>
+            <p className="font-medium text-[#e4e4e7]">{t.docs.actionChainsExamples}</p>
+            <div className="space-y-2">
+              <div className="rounded-md bg-white/[0.02] border border-white/[0.04] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[#e4e4e7] mb-1">{t.docs.actionChainsEx1Title}</p>
+                <p className="text-sm text-[#a1a1aa]"><Fmt text={t.docs.actionChainsEx1Desc} /></p>
+              </div>
+              <div className="rounded-md bg-white/[0.02] border border-white/[0.04] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[#e4e4e7] mb-1">{t.docs.actionChainsEx2Title}</p>
+                <p className="text-sm text-[#a1a1aa]"><Fmt text={t.docs.actionChainsEx2Desc} /></p>
+              </div>
+              <div className="rounded-md bg-white/[0.02] border border-white/[0.04] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[#e4e4e7] mb-1">{t.docs.actionChainsEx3Title}</p>
+                <p className="text-sm text-[#a1a1aa]"><Fmt text={t.docs.actionChainsEx3Desc} /></p>
+              </div>
+            </div>
           </SectionCard>
 
           <CollapsibleSection id="limits" icon={<Layers className="size-4 text-[#5865f2]" />} title={t.docs.limitsTitle} defaultOpen={false}>

@@ -82,7 +82,40 @@ For Components V2:
 - Do NOT describe the JSON structure, do NOT list the fields you set, do NOT explain what each property does unless the user specifically asks about embed fields.
 - Use the user's current embed state as context when they ask for modifications
 - Respond in the same language the user writes in
-- Be concise — this is a tool chat, not a conversation`;
+- Be concise — this is a tool chat, not a conversation
+
+## Action Chains (Bot Mode):
+embed.cat supports interactive buttons with Action Chains. When users ask about buttons, actions, or bot mode:
+
+**Bot Mode vs Webhooks:**
+- Webhooks can only send Link buttons (with URL). No interactivity.
+- Bot mode allows Primary, Secondary, Success, Danger buttons with custom_id and action chains.
+- Bot mode requires adding the embed.cat bot to the Discord server and selecting a channel via the server/channel picker.
+
+**Available action types for button chains:**
+- \`do_nothing\` — no action
+- \`wait\` — delay in seconds (config: { seconds: N })
+- \`add_role\` — give a role to the user who clicked (config: { roleId: "..." })
+- \`remove_role\` — remove a role (config: { roleId: "..." })
+- \`toggle_role\` — add if missing, remove if present (config: { roleId: "..." })
+- \`send_message\` — send text or a saved embed (config: { content: "...", channelId: "...", embedId: "...", ephemeral: true/false })
+- \`send_webhook\` — fire a webhook (config: { webhookUrl: "..." })
+- \`create_thread\` — create a thread (config: { name: "..." })
+- \`delete_message\` — delete the message the button is on
+- \`stop\` — stop executing the chain
+
+**How to set up:**
+1. Add a non-Link button (Primary/Secondary/Success/Danger) to an ActionRow
+2. Set a custom_id for the button
+3. Open the Action Chain Editor below the button settings
+4. Add actions in sequence — they execute top to bottom when the button is clicked
+5. Switch to Bot mode in the send panel, select server and channel, then send
+
+**Common patterns:**
+- Self-assign role: toggle_role with a roleId
+- Welcome + role: send_message (ephemeral greeting) → add_role
+- Ticket system: create_thread → send_message in the new thread
+- Cleanup: wait 5s → delete_message`;
 
 export const DAILY_LIMIT = 5;
 export const MAX_MESSAGE_LENGTH = 3000;

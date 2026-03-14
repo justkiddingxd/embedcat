@@ -16,7 +16,40 @@ model SavedEmbed {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  buttonActions ButtonAction[]
+
   @@index([userId])
+}
+
+model ButtonAction {
+  id        String   @id @default(cuid())
+  embedId   String?
+  messageId String?
+  buttonId  String
+  label     String
+  style     Int      @default(1)
+  actions   Action[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  embed     SavedEmbed? @relation(fields: [embedId], references: [id], onDelete: Cascade)
+
+  @@unique([buttonId])
+  @@index([embedId])
+  @@index([messageId])
+}
+
+model Action {
+  id             String       @id @default(cuid())
+  buttonActionId String
+  buttonAction   ButtonAction @relation(fields: [buttonActionId], references: [id], onDelete: Cascade)
+  order          Int          // порядок выполнения
+  type           String       // do_nothing, wait, add_role, remove_role, toggle_role, send_message, send_webhook, create_thread, set_variable, delete_message, stop
+  config         Json         @default("{}")
+  createdAt      DateTime     @default(now())
+
+  @@index([buttonActionId])
+  @@index([buttonActionId, order])
 }
 
 model ChatSession {

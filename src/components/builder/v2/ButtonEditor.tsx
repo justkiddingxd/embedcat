@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+  Dropdown,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+} from "@/components/ui/dropdown";
+import { ExternalLink } from "lucide-react";
 import { ButtonStyle, type ButtonComponent } from "@/types/discord";
+import { ActionChainEditor } from "./ActionChainEditor";
 
 interface ButtonEditorProps {
   button: ButtonComponent;
@@ -38,54 +40,42 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
   ];
 
   return (
+    <div className="space-y-0">
     <div className="grid grid-cols-[1fr_1fr] gap-2">
       <div className="space-y-1">
         <label className="text-[10px] font-medium text-[#a1a1aa] uppercase tracking-[0.08em]">
           {t.button.style}
         </label>
-        <Select
+        <Dropdown
           value={String(button.style)}
           onValueChange={(val) => {
-            if (val === null) return;
             const style = Number(val) as ButtonStyle;
             const updates: Partial<ButtonComponent> = { style };
             if (style === ButtonStyle.Link) {
               updates.url = button.url || "";
               delete updates.custom_id;
             } else {
-              updates.custom_id = button.custom_id || "";
+              updates.custom_id = button.custom_id || `btn_${Math.random().toString(36).slice(2, 10)}`;
               delete updates.url;
             }
             onChange(updates);
           }}
         >
-          <SelectTrigger className="h-7 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-            <span className="flex items-center gap-2">
-              <span
-                className="size-2.5 rounded-full shrink-0"
-                style={{ background: STYLE_OPTIONS.find((o) => o.value === button.style)?.color ?? "#4e5058" }}
-              />
-              {STYLE_OPTIONS.find((o) => o.value === button.style)?.label ?? "Secondary"}
-            </span>
-          </SelectTrigger>
-          <SelectContent className="border-white/[0.08] bg-[#111113]">
+          <DropdownTrigger size="sm">
+            <StyleIcon style={button.style} />
+            {STYLE_OPTIONS.find((o) => o.value === button.style)?.label ?? "Secondary"}
+          </DropdownTrigger>
+          <DropdownContent>
             {STYLE_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={String(opt.value)}
-                className="text-[#e4e4e7] text-xs"
-              >
+              <DropdownItem key={opt.value} value={String(opt.value)}>
                 <span className="flex items-center gap-2">
-                  <span
-                    className="size-2.5 rounded-full"
-                    style={{ background: opt.color }}
-                  />
+                  <StyleIcon style={opt.value} />
                   {opt.label}
                 </span>
-              </SelectItem>
+              </DropdownItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownContent>
+        </Dropdown>
       </div>
 
       <div className="space-y-1">
@@ -132,5 +122,22 @@ export function ButtonEditor({ button, onChange }: ButtonEditorProps) {
         </div>
       </div>
     </div>
+
+    {!isLink && button.custom_id && (
+      <ActionChainEditor buttonId={button.custom_id} />
+    )}
+    </div>
+  );
+}
+
+function StyleIcon({ style }: { style: ButtonStyle }) {
+  if (style === ButtonStyle.Link) {
+    return <ExternalLink className="size-3 text-[#a1a1aa] shrink-0" />;
+  }
+  return (
+    <span
+      className="size-2.5 rounded-full shrink-0"
+      style={{ background: STYLE_COLORS[style] ?? "#4e5058" }}
+    />
   );
 }

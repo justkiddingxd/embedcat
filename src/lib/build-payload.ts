@@ -14,7 +14,8 @@ import type {
   FileComponent,
   ContainerChild,
 } from "@/types/discord";
-import { IS_COMPONENTS_V2 } from "@/types/discord";
+import { IS_COMPONENTS_V2, ButtonStyle } from "@/types/discord";
+import type { ButtonActionConfig } from "@/store/builder-store";
 
 // --- Strip internal IDs from objects before sending to Discord ---
 
@@ -234,6 +235,104 @@ export async function sendWebhookMessage(
         webhookUrl: webhook.url,
         threadId: webhook.thread_id,
         payload,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: (data as { error?: string }).error || `HTTP ${res.status}`,
+      };
+    }
+
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Network error",
+    };
+  }
+}
+
+export function hasNonLinkButtons(components: TopLevelComponent[]): boolean {
+  for (const c of components) {
+    if (c.type === 1) {
+      const ar = c as ActionRowComponent;
+      if (ar.components.some((b) => b.style !== ButtonStyle.Link)) return true;
+    }
+    if (c.type === 17) {
+      const ct = c as ContainerComponent;
+      for (const child of ct.components) {
+        if (child.type === 1) {
+          const ar = child as ActionRowComponent;
+          if (ar.components.some((b) => b.style !== ButtonStyle.Link)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function collectNonLinkButtons(components: TopLevelComponent[]): ButtonComponent[] {
+  const buttons: ButtonComponent[] = [];
+  for (const c of components) {
+    if (c.type === 1) {
+      const ar = c as ActionRowComponent;
+      buttons.push(...ar.components.filter((b) => b.style !== ButtonStyle.Link));
+    }
+    if (c.type === 17) {
+      const ct = c as ContainerComponent;
+      for (const child of ct.components) {
+        if (child.type === 1) {
+          const ar = child as ActionRowComponent;
+          buttons.push(...ar.components.filter((b) => b.style !== ButtonStyle.Link));
+        }
+      }
+    }
+  }
+  return buttons;
+}
+
+export async function sendBotMessage(
+  channelId: string,
+  guildId: string,
+  payload: Record<string, unknown>,
+  components: TopLevelComponent[],
+  buttonActionsMap: Record<string, ButtonActionConfig>,
+  embedId?: string,
+): Promise<{ success: boolean; error?: string }> {
+  const nonLinkButtons = collectNonLinkButtons(components);
+
+  const buttonActions = nonLinkButtons.map((b) => {
+    const buttonId = b.custom_id || `btn_${b.id || Math.random().toString(36).slice(2, 10)}`;
+    return {
+      buttonId,
+      label: b.label ?? "",
+      style: b.style,
+      actions: (buttonActionsMap[buttonId]?.actions ?? buttonActionsMap[b.custom_id || ""]?.actions ?? []).map((a, i) => ({
+        order: i,
+        type: a.type,
+        config: a.config,
+      })),
+    };
+  });
+
+  const botPayload: Record<string, unknown> = { ...payload };
+  delete botPayload.username;
+  delete botPayload.avatar_url;
+
+  try {
+    const res = await fetch("/api/bot/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        channelId,
+        guildId,
+        payload: botPayload,
+        buttonActions,
+        embedId,
       }),
     });
 

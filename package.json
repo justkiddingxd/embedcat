@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 2418",
+    "dev": "next dev -p 2419",
     "build": "next build",
     "start": "next start -p 2418",
-    "lint": "eslint"
+    "lint": "eslint",
+    "bot": "npx tsx src/bot/index.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",
@@ -17,6 +18,7 @@
     "ai": "^6.0.116",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "discord.js": "^14.25.1",
     "lucide-react": "^0.577.0",
     "nanoid": "^5.1.6",
     "next": "16.1.6",

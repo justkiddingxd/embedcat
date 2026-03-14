@@ -4,12 +4,11 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dropdown,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+} from "@/components/ui/dropdown";
 import type { SeparatorComponent } from "@/types/discord";
 
 interface SeparatorEditorProps {
@@ -38,24 +37,20 @@ export function SeparatorEditor({
 
       <div className="flex items-center gap-2">
         <label className="text-xs text-[#71717a]">{t.v2.spacing}</label>
-        <Select
+        <Dropdown
           value={String(component.spacing)}
           onValueChange={(val) =>
             onChange({ spacing: Number(val) as 1 | 2 })
           }
         >
-          <SelectTrigger className="h-7 w-24 border-white/[0.06] bg-[#0a0a0b] text-[#e4e4e7] text-xs">
-            <SelectValue>{component.spacing === 1 ? t.v2.small : t.v2.large}</SelectValue>
-          </SelectTrigger>
-          <SelectContent className="border-white/[0.08] bg-[#111113]">
-            <SelectItem value="1" className="text-[#e4e4e7] text-xs">
-              {t.v2.small}
-            </SelectItem>
-            <SelectItem value="2" className="text-[#e4e4e7] text-xs">
-              {t.v2.large}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          <DropdownTrigger size="sm" className="w-24">
+            {component.spacing === 1 ? t.v2.small : t.v2.large}
+          </DropdownTrigger>
+          <DropdownContent>
+            <DropdownItem value="1">{t.v2.small}</DropdownItem>
+            <DropdownItem value="2">{t.v2.large}</DropdownItem>
+          </DropdownContent>
+        </Dropdown>
       </div>
     </div>
   );
