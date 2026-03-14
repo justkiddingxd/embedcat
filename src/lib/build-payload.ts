@@ -15,7 +15,7 @@ import type {
   ContainerChild,
 } from "@/types/discord";
 import { IS_COMPONENTS_V2, ButtonStyle } from "@/types/discord";
-import type { ButtonActionConfig } from "@/store/builder-store";
+import type { ActionItem, ButtonActionConfig } from "@/store/builder-store";
 
 // --- Strip internal IDs from objects before sending to Discord ---
 
@@ -212,6 +212,66 @@ export function buildComponentsV2Payload(
   payload.avatar_url = webhook.avatar_url || "https://rin.ms/embedcat.png";
 
   return payload;
+}
+
+function injectActions(
+  obj: Record<string, unknown>,
+  actionsMap: Record<string, ButtonActionConfig>
+): Record<string, unknown> {
+  if (obj.type === 2 && obj.style !== 5 && typeof obj.custom_id === "string") {
+    const cfg = actionsMap[obj.custom_id];
+    if (cfg?.actions?.length) {
+      return {
+        ...obj,
+        _actions: cfg.actions.map((a) => ({ type: a.type, config: a.config })),
+      };
+    }
+  }
+  const result = { ...obj };
+  if (Array.isArray(result.components)) {
+    result.components = (result.components as Record<string, unknown>[]).map(
+      (c) => injectActions(c, actionsMap)
+    );
+  }
+  return result;
+}
+
+export function buildComponentsV2WithActions(
+  components: TopLevelComponent[],
+  webhook: WebhookConfig,
+  actionsMap: Record<string, ButtonActionConfig>
+): Record<string, unknown> {
+  const base = buildComponentsV2Payload(components, webhook);
+  if (!actionsMap || Object.keys(actionsMap).length === 0) return base;
+  const comps = base.components as Record<string, unknown>[];
+  return {
+    ...base,
+    components: comps.map((c) => injectActions(c, actionsMap)),
+  };
+}
+
+export function extractActionsFromPayload(
+  payload: Record<string, unknown>
+): Record<string, ActionItem[]> {
+  const result: Record<string, ActionItem[]> = {};
+  const walk = (obj: Record<string, unknown>) => {
+    if (
+      obj.type === 2 &&
+      typeof obj.custom_id === "string" &&
+      Array.isArray(obj._actions)
+    ) {
+      result[obj.custom_id] = (obj._actions as { type: string; config: Record<string, unknown> }[]).map(
+        (a, i) => ({ id: `imported_${i}_${Math.random().toString(36).slice(2, 8)}`, type: a.type, config: a.config ?? {} })
+      );
+    }
+    if (Array.isArray(obj.components)) {
+      (obj.components as Record<string, unknown>[]).forEach(walk);
+    }
+  };
+  if (Array.isArray(payload.components)) {
+    (payload.components as Record<string, unknown>[]).forEach(walk);
+  }
+  return result;
 }
 
 // --- Nadeko format ---

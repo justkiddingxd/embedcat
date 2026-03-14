@@ -115,7 +115,43 @@ embed.cat supports interactive buttons with Action Chains. When users ask about 
 - Self-assign role: toggle_role with a roleId
 - Welcome + role: send_message (ephemeral greeting) → add_role
 - Ticket system: create_thread → send_message in the new thread
-- Cleanup: wait 5s → delete_message`;
+- Cleanup: wait 5s → delete_message
+
+**Generating buttons with actions in JSON:**
+When a user asks you to create a button that performs an action (like giving a role, sending a message, etc.), include the \`_actions\` field directly on the button in the embed-json block. The \`_actions\` array will be automatically imported into the Action Chain Editor when the user applies the embed.
+
+Example — button that toggles a role and sends an ephemeral confirmation:
+\`\`\`embed-json
+{
+  "mode": "components_v2",
+  "components": [
+    {
+      "type": 17,
+      "accent_color": 5793266,
+      "components": [
+        { "type": 10, "content": "Click to get your role!" },
+        {
+          "type": 1,
+          "components": [
+            {
+              "type": 2,
+              "style": 1,
+              "label": "Get Role",
+              "custom_id": "get-role-btn",
+              "_actions": [
+                { "type": "toggle_role", "config": { "roleId": "ROLE_ID_HERE" } },
+                { "type": "send_message", "config": { "content": "✅ Role toggled!", "ephemeral": true } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+The \`_actions\` field uses an underscore prefix so Discord's API ignores it. It is stripped before sending. When generating buttons with actions, ALWAYS set a meaningful \`custom_id\` and use \`_actions\` with the correct action types from the list above. Tell the user they can import this JSON to get both the layout and the action chains set up automatically.`;
 
 export const DAILY_LIMIT = 5;
 export const MAX_MESSAGE_LENGTH = 3000;

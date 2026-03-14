@@ -273,6 +273,7 @@ interface BuilderState {
   updateButtonAction: (buttonId: string, actionId: string, updates: Partial<ActionItem>) => void;
   reorderButtonActions: (buttonId: string, fromIndex: number, toIndex: number) => void;
   clearButtonActions: (buttonId: string) => void;
+  importButtonActions: (actions: Record<string, ActionItem[]>) => void;
 
   undo: () => void;
   redo: () => void;
@@ -614,6 +615,15 @@ export const useBuilderStore = create<BuilderState>()(
     rawSet((s) => {
       const { [buttonId]: _, ...rest } = s.buttonActions;
       return { buttonActions: rest };
+    }),
+
+  importButtonActions: (actions) =>
+    rawSet(() => {
+      const mapped: Record<string, ButtonActionConfig> = {};
+      for (const [key, items] of Object.entries(actions)) {
+        mapped[key] = { actions: items };
+      }
+      return { buttonActions: mapped };
     }),
 
   canUndo: () => undoStack.length > 0,

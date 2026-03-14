@@ -184,6 +184,7 @@ export const ru: typeof en = {
     invalidFormat: "Неверный формат JSON",
     failedNadeko: "Не удалось импортировать формат Nadeko",
     failedDiscohook: "Не удалось импортировать формат Discohook",
+    includeActions: "Включить цепочки действий",
   },
   chat: {
     aiTitle: "embed.cat AI",

@@ -182,6 +182,7 @@ export const en = {
     invalidFormat: "Invalid JSON format",
     failedNadeko: "Failed to import Nadeko format",
     failedDiscohook: "Failed to import Discohook format",
+    includeActions: "Include action chains",
   },
   chat: {
     aiTitle: "embed.cat AI",

@@ -6,6 +6,8 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import {
   buildClassicPayload,
   buildComponentsV2Payload,
+  buildComponentsV2WithActions,
+  extractActionsFromPayload,
   buildNadekoPayload,
   buildDiscohookPayload,
 } from "@/lib/build-payload";
@@ -17,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Code2, Copy, Check, Upload } from "lucide-react";
+import { Code2, Copy, Check, Upload, Link2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 type JsonFormat = "embedcat" | "nadeko" | "discohook";
@@ -32,14 +34,15 @@ export function JsonEditor() {
   const store = useBuilderStore();
   const { t } = useLocale();
   const { toast } = useToast();
-  const { mode, content, embeds, components, webhook, jsonEditorOpen, setJsonEditorOpen, importFromJson } = store;
+  const { mode, content, embeds, components, webhook, jsonEditorOpen, setJsonEditorOpen, importFromJson, buttonActions, importButtonActions } = store;
   const [jsonText, setJsonText] = useState("");
   const [copied, setCopied] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [format, setFormat] = useState<JsonFormat>("embedcat");
+  const [includeActions, setIncludeActions] = useState(false);
 
   const buildJson = useCallback(
-    (fmt: JsonFormat) => {
+    (fmt: JsonFormat, withActions: boolean) => {
       if (mode === "classic") {
         switch (fmt) {
           case "nadeko":
@@ -50,16 +53,19 @@ export function JsonEditor() {
             return JSON.stringify(buildClassicPayload(content, embeds, webhook), null, 2);
         }
       }
+      if (withActions) {
+        return JSON.stringify(buildComponentsV2WithActions(components, webhook, buttonActions), null, 2);
+      }
       return JSON.stringify(buildComponentsV2Payload(components, webhook), null, 2);
     },
-    [mode, content, embeds, components, webhook]
+    [mode, content, embeds, components, webhook, buttonActions]
   );
 
   useEffect(() => {
     if (!jsonEditorOpen) return;
-    setJsonText(buildJson(format));
+    setJsonText(buildJson(format, includeActions));
     setImportError(null);
-  }, [jsonEditorOpen, buildJson, format]);
+  }, [jsonEditorOpen, buildJson, format, includeActions]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(jsonText);
@@ -97,6 +103,11 @@ export function JsonEditor() {
         if (success) { setImportError(null); setJsonEditorOpen(false); }
         else setImportError(t.jsonEditor.failedDiscohook);
         return;
+      }
+
+      const extracted = extractActionsFromPayload(data);
+      if (Object.keys(extracted).length > 0) {
+        importButtonActions(extracted);
       }
 
       const success = importFromJson(jsonText);
@@ -138,6 +149,19 @@ export function JsonEditor() {
                 </button>
               ))}
             </div>
+          )}
+          {mode === "components_v2" && (
+            <button
+              onClick={() => setIncludeActions((v) => !v)}
+              className={`flex items-center gap-1.5 self-start rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                includeActions
+                  ? "border-[#5865f2]/30 bg-[#5865f2]/10 text-[#5865f2]"
+                  : "border-white/[0.06] text-[#52525b] hover:text-[#a1a1aa] hover:border-white/[0.12]"
+              }`}
+            >
+              <Link2 className="size-3" />
+              {t.jsonEditor.includeActions}
+            </button>
           )}
           <textarea
             value={jsonText}
