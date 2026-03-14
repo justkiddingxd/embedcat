@@ -17,6 +17,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid webhook URL" }, { status: 400 });
   }
 
+  // Validate components: webhooks can only send Link buttons (style 5)
+  const components = payload.components as Array<{ type: number; components?: Array<{ type: number; style?: number }> }> | undefined;
+  if (components) {
+    for (const row of components) {
+      if (row.components) {
+        for (const comp of row.components) {
+          // type 2 = Button, style 5 = Link
+          if (comp.type === 2 && comp.style !== 5) {
+            return NextResponse.json(
+              { error: "Webhooks can only send Link buttons. Other button types (like custom ID buttons) require a bot application." },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+  }
+
   const isV2 = payload.flags === 32768;
   const url = new URL(webhookUrl);
   url.searchParams.set("wait", "true");
