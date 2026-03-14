@@ -134,6 +134,48 @@ function cleanComponent(c: TopLevelComponent | ContainerChild): Record<string, u
   }
 }
 
+function isEmptyComponent(c: Record<string, unknown>): boolean {
+  switch (c.type) {
+    case 10: // TextDisplay
+      return !c.content || (typeof c.content === "string" && !c.content.trim());
+    case 12: { // MediaGallery
+      const items = c.items as { media?: { url?: string } }[] | undefined;
+      return !items || items.length === 0 || items.every((i) => !i.media?.url);
+    }
+    case 9: { // Section
+      const comps = c.components as { content?: string }[] | undefined;
+      const allEmpty = !comps || comps.every((t) => !t.content || (typeof t.content === "string" && !t.content.trim()));
+      return allEmpty;
+    }
+    case 1: { // ActionRow
+      const buttons = c.components as unknown[] | undefined;
+      return !buttons || buttons.length === 0;
+    }
+    case 17: { // Container
+      const children = c.components as Record<string, unknown>[] | undefined;
+      return !children || children.length === 0;
+    }
+    case 13: { // File
+      const file = c.file as { url?: string } | undefined;
+      return !file?.url;
+    }
+    default:
+      return false;
+  }
+}
+
+function stripEmptyComponents(components: Record<string, unknown>[]): Record<string, unknown>[] {
+  return components
+    .map((c) => {
+      // Recursively strip empty children from containers
+      if (c.type === 17 && Array.isArray(c.components)) {
+        return { ...c, components: stripEmptyComponents(c.components as Record<string, unknown>[]) };
+      }
+      return c;
+    })
+    .filter((c) => !isEmptyComponent(c));
+}
+
 // --- Build Payload ---
 
 export function buildClassicPayload(
@@ -158,9 +200,12 @@ export function buildComponentsV2Payload(
   components: TopLevelComponent[],
   webhook: WebhookConfig
 ) {
+  const cleaned = stripEmptyComponents(
+    components.filter((c) => !c.hidden).map(cleanComponent)
+  );
   const payload: Record<string, unknown> = {
     flags: IS_COMPONENTS_V2,
-    components: components.filter((c) => !c.hidden).map(cleanComponent),
+    components: cleaned,
   };
 
   payload.username = webhook.username || "embed.cat";
