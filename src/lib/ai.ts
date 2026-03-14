@@ -86,7 +86,7 @@ For Components V2:
 
 export const DAILY_LIMIT = 5;
 export const MAX_MESSAGE_LENGTH = 3000;
-export const MAX_CONTEXT_MESSAGES = 30;
+export const MAX_CONTEXT_MESSAGES = 20;
 export const ADMIN_USER_ID = "1376745003174334505";
 
 import { prisma } from "@/lib/prisma";

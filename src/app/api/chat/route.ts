@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     ? `${SYSTEM_PROMPT}\n\n## Current user embed state:\n\`\`\`json\n${embedContext}\n\`\`\``
     : SYSTEM_PROMPT;
 
-  const messages = history.map((m: { role: string; content: string }) => ({
+  let messages = history.map((m: { role: string; content: string }) => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
@@ -127,6 +127,7 @@ export async function POST(req: Request) {
 
   // Wrap stream creation with retry — if the stream fails before producing
   // any text (e.g. gateway returns 400), we retry up to MAX_RETRIES times.
+  // On 400 errors, trim history in half and retry (likely context too long).
   async function createStream(): Promise<{ textStream: AsyncIterable<string> }> {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const r = streamText({
@@ -149,8 +150,15 @@ export async function POST(req: Request) {
         }
         return { textStream: replayStream() };
       } catch (err) {
-        console.error(`[chat] Stream attempt ${attempt + 1} failed:`, err);
+        const statusCode = (err as { statusCode?: number }).statusCode;
+        console.error(`[chat] Stream attempt ${attempt + 1} failed (status: ${statusCode}, messages: ${messages.length}):`, err);
         if (attempt < MAX_RETRIES) {
+          // On 400, trim history — likely context too long
+          if (statusCode === 400 && messages.length > 2) {
+            const keep = Math.max(2, Math.floor(messages.length / 2));
+            messages = messages.slice(-keep);
+            console.log(`[chat] Trimmed history to ${messages.length} messages for retry`);
+          }
           await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
         } else {
           throw err;
