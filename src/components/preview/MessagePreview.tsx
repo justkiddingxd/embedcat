@@ -112,6 +112,7 @@ type MarkdownNode =
   | { type: "underline"; children: MarkdownNode[] }
   | { type: "strikethrough"; children: MarkdownNode[] }
   | { type: "code"; value: string }
+  | { type: "code_block"; value: string }
   | { type: "spoiler"; children: MarkdownNode[] }
   | { type: "link"; text: string; url: string }
   | { type: "user_mention"; id: string }
@@ -122,7 +123,7 @@ type MarkdownNode =
 function parseInlineMarkdown(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = [];
   const regex =
-    /__(.+?)__|~~(.+?)~~|\*\*(.+?)\*\*|\*(.+?)\*|(?<!`)`(?!`)([^`]+)`(?!`)|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)|<@!?(\d{17,20})>|<@&(\d{17,20})>|<#(\d{17,20})>|<(a?):(\w+):(\d{17,20})>/g;
+    /```([^`]*?)```|__(.+?)__|~~(.+?)~~|\*\*(.+?)\*\*|\*(.+?)\*|(?<!`)`(?!`)([^`]+)`(?!`)|\|\|(.+?)\|\||\[([^\]]+)\]\(([^)]+)\)|<@!?(\d{17,20})>|<@&(\d{17,20})>|<#(\d{17,20})>|<(a?):(\w+):(\d{17,20})>/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -131,27 +132,29 @@ function parseInlineMarkdown(text: string): MarkdownNode[] {
       nodes.push({ type: "text", value: text.slice(lastIndex, match.index) });
     }
     if (match[1] !== undefined) {
-      nodes.push({ type: "underline", children: [{ type: "text", value: match[1] }] });
+      nodes.push({ type: "code_block", value: match[1] });
     } else if (match[2] !== undefined) {
-      nodes.push({ type: "strikethrough", children: [{ type: "text", value: match[2] }] });
+      nodes.push({ type: "underline", children: [{ type: "text", value: match[2] }] });
     } else if (match[3] !== undefined) {
-      nodes.push({ type: "bold", children: [{ type: "text", value: match[3] }] });
+      nodes.push({ type: "strikethrough", children: [{ type: "text", value: match[3] }] });
     } else if (match[4] !== undefined) {
-      nodes.push({ type: "italic", children: [{ type: "text", value: match[4] }] });
+      nodes.push({ type: "bold", children: [{ type: "text", value: match[4] }] });
     } else if (match[5] !== undefined) {
-      nodes.push({ type: "code", value: match[5] });
+      nodes.push({ type: "italic", children: [{ type: "text", value: match[5] }] });
     } else if (match[6] !== undefined) {
-      nodes.push({ type: "spoiler", children: [{ type: "text", value: match[6] }] });
-    } else if (match[7] !== undefined && match[8] !== undefined) {
-      nodes.push({ type: "link", text: match[7], url: match[8] });
-    } else if (match[9] !== undefined) {
-      nodes.push({ type: "user_mention", id: match[9] });
+      nodes.push({ type: "code", value: match[6] });
+    } else if (match[7] !== undefined) {
+      nodes.push({ type: "spoiler", children: [{ type: "text", value: match[7] }] });
+    } else if (match[8] !== undefined && match[9] !== undefined) {
+      nodes.push({ type: "link", text: match[8], url: match[9] });
     } else if (match[10] !== undefined) {
-      nodes.push({ type: "role_mention", id: match[10] });
+      nodes.push({ type: "user_mention", id: match[10] });
     } else if (match[11] !== undefined) {
-      nodes.push({ type: "channel_mention", id: match[11] });
-    } else if (match[13] !== undefined && match[14] !== undefined) {
-      nodes.push({ type: "custom_emoji", name: match[13], id: match[14], animated: match[12] === "a" });
+      nodes.push({ type: "role_mention", id: match[11] });
+    } else if (match[12] !== undefined) {
+      nodes.push({ type: "channel_mention", id: match[12] });
+    } else if (match[14] !== undefined && match[15] !== undefined) {
+      nodes.push({ type: "custom_emoji", name: match[14], id: match[15], animated: match[13] === "a" });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -200,6 +203,15 @@ function RenderInline({ nodes }: { nodes: MarkdownNode[] }) {
               >
                 {node.value}
               </code>
+            );
+          case "code_block":
+            return (
+              <pre
+                key={i}
+                className="my-0.5 rounded-[4px] bg-[#2b2d31] border border-[#1e1f22] text-[0.875rem] leading-[1.375rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words"
+              >
+                <code className="block py-[0.5em] px-[0.6em]">{node.value}</code>
+              </pre>
             );
           case "spoiler":
             return (
