@@ -204,6 +204,16 @@ export function BotSendPanel({
         />
       )}
 
+      <a
+        href={inviteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1 py-1 rounded text-[10px] text-[#5865f2] hover:text-[#8b9fef] transition-colors"
+      >
+        <Bot className="size-3" />
+        {t.webhook.addBot ?? "Add Bot"}
+      </a>
+
       {guildId && (
         channelsLoading ? (
           <div className="h-8 flex items-center justify-center text-[11px] text-[#52525b]">
