@@ -248,13 +248,29 @@ function renderMarkdown(text: string): React.ReactNode {
 
     // Code blocks (```)
     if (line.startsWith("```")) {
-      // Check if there's a closing ```
+      // Single-line code block: ```content``` on same line
+      const rest = line.slice(3);
+      const closeIdx = rest.indexOf("```");
+      if (closeIdx >= 0) {
+        const content = rest.slice(0, closeIdx);
+        result.push(
+          <pre
+            key={`cb-${i}`}
+            className="mt-0.5 mb-0.5 rounded-[4px] border border-[#2b2d31] bg-[#2b2d31] py-[0.4375rem] px-[0.5rem] text-[0.875rem] leading-[1.125rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words inline"
+          >
+            <code>{content}</code>
+          </pre>
+        );
+        i++;
+        continue;
+      }
+      // Multi-line: check if there's a closing ``` on a later line
       let hasClose = false;
       for (let j = i + 1; j < lines.length; j++) {
         if (lines[j].startsWith("```")) { hasClose = true; break; }
       }
       if (hasClose) {
-        const lang = line.slice(3).trim();
+        const lang = rest.trim();
         const codeLines: string[] = [];
         i++;
         while (i < lines.length && !lines[i].startsWith("```")) {
@@ -278,8 +294,9 @@ function renderMarkdown(text: string): React.ReactNode {
       continue;
     }
 
-    if (line.startsWith(">>> ")) {
-      const quoteLines = [line.slice(4), ...lines.slice(i + 1)];
+    if (line.startsWith(">>>")) {
+      const textAfter = line.startsWith(">>> ") ? line.slice(4) : line.slice(3);
+      const quoteLines = [textAfter, ...lines.slice(i + 1)];
       result.push(
         <div key={i} className="flex pl-0 my-0.5">
           <div className="w-1 rounded-full bg-[#4e5058] mr-[0.7rem] shrink-0" />
