@@ -145,6 +145,16 @@ export function WebhookPanel() {
             <Bot className="size-2.5" />
             {t.webhook.botMode}
           </button>
+          {useBotMode && (
+            <a
+              href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID}&permissions=2416307200&scope=bot`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto shrink-0 px-2 py-0.5 rounded bg-[#5865f2] text-white text-[10px] font-medium hover:bg-[#4752c4] transition-colors"
+            >
+              {t.webhook.addBot ?? "Add Bot"}
+            </a>
+          )}
         </div>
       )}
 

@@ -164,8 +164,6 @@ export function BotSendPanel({
           Loading servers...
         </div>
       ) : (
-        <div className="flex items-center gap-1.5">
-        <div className="flex-1 min-w-0">
         <Combobox
           value={guildId}
           onChange={(v) => {
@@ -204,16 +202,6 @@ export function BotSendPanel({
               : null
           }
         />
-        </div>
-        <a
-          href={inviteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 px-2 py-1.5 rounded bg-[#5865f2] text-white text-[10px] font-medium hover:bg-[#4752c4] transition-colors"
-        >
-          {t.webhook.addBot ?? "Add Bot"}
-        </a>
-        </div>
       )}
 
       {guildId && (
