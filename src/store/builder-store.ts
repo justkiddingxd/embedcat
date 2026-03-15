@@ -230,6 +230,7 @@ function takeSnapshot(state: Snapshot) {
 interface BuilderState {
   mode: BuilderMode;
   webhook: WebhookConfig;
+  botGuildId: string;
   content: string;
   embeds: DiscordEmbed[];
   components: TopLevelComponent[];
@@ -238,6 +239,7 @@ interface BuilderState {
 
   setMode: (mode: BuilderMode) => void;
   setWebhook: (webhook: Partial<WebhookConfig>) => void;
+  setBotGuildId: (id: string) => void;
 
   setContent: (content: string) => void;
   addEmbed: () => void;
@@ -296,6 +298,7 @@ export const useBuilderStore = create<BuilderState>()(
   return {
   mode: "classic",
   webhook: { url: "" },
+  botGuildId: "",
   content: "",
   embeds: [createWelcomeEmbed()],
   components: [createWelcomeContainer()],
@@ -305,6 +308,7 @@ export const useBuilderStore = create<BuilderState>()(
   setMode: (mode) => rawSet({ mode }),
   setWebhook: (webhook) =>
     rawSet((s) => ({ webhook: { ...s.webhook, ...webhook } })),
+  setBotGuildId: (id) => rawSet({ botGuildId: id }),
 
   setContent: (content) => set({ content }),
 

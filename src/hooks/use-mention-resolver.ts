@@ -26,6 +26,7 @@ const pendingUsers = new Set<string>();
 const pendingRoles = new Set<string>();
 let batchTimer: ReturnType<typeof setTimeout> | null = null;
 let currentWebhookUrl = "";
+let currentGuildId = "";
 let revision = 0;
 const listeners = new Set<() => void>();
 
@@ -57,7 +58,8 @@ async function flush() {
     if (userIds.length > 0) body.userIds = userIds;
     if (roleIds.length > 0) {
       body.roleIds = roleIds;
-      body.webhookUrl = currentWebhookUrl;
+      if (currentGuildId) body.guildId = currentGuildId;
+      else body.webhookUrl = currentWebhookUrl;
     }
 
     const res = await fetch("/api/discord/resolve", {
@@ -100,8 +102,9 @@ function requestRole(id: string) {
   scheduleBatch();
 }
 
-export function useMentionResolver(webhookUrl: string) {
+export function useMentionResolver(webhookUrl: string, guildId?: string) {
   currentWebhookUrl = webhookUrl;
+  currentGuildId = guildId || "";
 
   useSyncExternalStore(subscribe, getRevision, getRevision);
 

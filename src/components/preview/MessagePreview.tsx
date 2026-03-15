@@ -43,12 +43,12 @@ function UserMentionPill({ id }: { id: string }) {
 function RoleMentionPill({ id }: { id: string }) {
   const { resolveRole } = useContext(MentionCtx);
   const role = resolveRole(id);
-  const label = role ? `@${role.name}` : `@Unknown Role`;
+  const label = role ? `@${role.name}` : `@role`;
   const color = role && role.color !== 0 ? `#${role.color.toString(16).padStart(6, "0")}` : "#c9cdfb";
   return (
     <span
       className="inline rounded-[3px] px-[2px] hover:brightness-125 cursor-pointer font-medium"
-      style={{ backgroundColor: `${color}25`, color }}
+      style={{ backgroundColor: `${color}1a`, color }}
     >
       {label}
     </span>
@@ -248,34 +248,42 @@ function renderMarkdown(text: string): React.ReactNode {
 
     // Code blocks (```)
     if (line.startsWith("```")) {
-      const lang = line.slice(3).trim();
-      const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        i++;
+      // Check if there's a closing ```
+      let hasClose = false;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].startsWith("```")) { hasClose = true; break; }
       }
-      if (i < lines.length) i++; // skip closing ```
-      result.push(
-        <pre
-          key={`cb-${i}`}
-          className="mt-1 mb-1 rounded-[4px] bg-[#1e1f22] border border-[#1e1f22]/50 p-2 text-[0.85em] font-mono text-[#e8e8e8] overflow-x-auto whitespace-pre-wrap break-words"
-        >
-          {lang && (
-            <div className="text-[10px] text-[#71717a] mb-1">{lang}</div>
-          )}
-          <code>{codeLines.join("\n")}</code>
-        </pre>
-      );
+      if (hasClose) {
+        const lang = line.slice(3).trim();
+        const codeLines: string[] = [];
+        i++;
+        while (i < lines.length && !lines[i].startsWith("```")) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        if (i < lines.length) i++; // skip closing ```
+        result.push(
+          <pre
+            key={`cb-${i}`}
+            className="mt-0.5 mb-0.5 rounded-[4px] border border-[#2b2d31] bg-[#2b2d31] py-[0.4375rem] px-[0.5rem] text-[0.875rem] leading-[1.125rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words"
+          >
+            <code>{codeLines.join("\n")}</code>
+          </pre>
+        );
+        continue;
+      }
+      // No closing ``` — render as normal text
+      result.push(renderSingleLine(line, i));
+      i++;
       continue;
     }
 
     if (line.startsWith(">>> ")) {
       const quoteLines = [line.slice(4), ...lines.slice(i + 1)];
       result.push(
-        <div key={i} className="flex leading-[1.375rem]">
-          <div className="w-1 rounded-[4px] bg-[#4e5058] mr-3 shrink-0" />
-          <div>{renderMarkdownLines(quoteLines)}</div>
+        <div key={i} className="flex pl-0 my-0.5">
+          <div className="w-1 rounded-full bg-[#4e5058] mr-[0.7rem] shrink-0" />
+          <blockquote className="leading-[1.375rem]">{renderMarkdownLines(quoteLines)}</blockquote>
         </div>
       );
       i = lines.length;
@@ -289,9 +297,9 @@ function renderMarkdown(text: string): React.ReactNode {
         i++;
       }
       result.push(
-        <div key={`q-${i}`} className="flex leading-[1.375rem]">
-          <div className="w-1 rounded-[4px] bg-[#4e5058] mr-3 shrink-0" />
-          <div>{renderMarkdownLines(quoteLines)}</div>
+        <div key={`q-${i}`} className="flex pl-0 my-0.5">
+          <div className="w-1 rounded-full bg-[#4e5058] mr-[0.7rem] shrink-0" />
+          <blockquote className="leading-[1.375rem]">{renderMarkdownLines(quoteLines)}</blockquote>
         </div>
       );
       continue;
@@ -787,7 +795,8 @@ export default function MessagePreview() {
   const embeds = useBuilderStore((s) => s.embeds);
   const components = useBuilderStore((s) => s.components);
   const webhook = useBuilderStore((s) => s.webhook);
-  const resolver = useMentionResolver(webhook.url);
+  const botGuildId = useBuilderStore((s) => s.botGuildId);
+  const resolver = useMentionResolver(webhook.url, botGuildId);
 
   const username = webhook.username || "embed.cat";
   const avatarUrl = webhook.avatar_url || "https://rin.ms/embedcat.png";

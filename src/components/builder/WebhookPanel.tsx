@@ -34,7 +34,12 @@ export function WebhookPanel() {
   const [showCheck, setShowCheck] = useState(false);
 
   const [botChannelId, setBotChannelId] = useState("");
-  const [botGuildId, setBotGuildId] = useState("");
+  const [botGuildId, setBotGuildIdLocal] = useState("");
+  const storeBotGuildId = useBuilderStore((s) => s.setBotGuildId);
+  const setBotGuildId = (id: string) => {
+    setBotGuildIdLocal(id);
+    storeBotGuildId(id);
+  };
 
   const needsBot = mode === "components_v2" && hasNonLinkButtons(components);
   const [forceBotMode, setForceBotMode] = useState(false);
