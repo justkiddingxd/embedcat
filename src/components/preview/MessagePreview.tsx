@@ -248,17 +248,18 @@ function renderMarkdown(text: string): React.ReactNode {
 
     // Code blocks (```)
     if (line.startsWith("```")) {
-      // Single-line code block: ```content``` on same line — renders as code block (not inline)
+      // Single-line code block: ```content``` on same line
       const rest = line.slice(3);
       const closeIdx = rest.indexOf("```");
       if (closeIdx >= 0) {
         const content = rest.slice(0, closeIdx);
         result.push(
-          <div key={`cb-${i}`} className="leading-[1.375rem]">
-            <code className="rounded-[3px] bg-[#2b2d31] px-[4px] py-[2px] font-mono text-[0.85em] text-[#dbdee1]">
-              {content}
-            </code>
-          </div>
+          <pre
+            key={`cb-${i}`}
+            className="my-0.5 rounded-[4px] bg-[#2b2d31] border border-[#1e1f22] text-[0.875rem] leading-[1.375rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words"
+          >
+            <code className="block py-[0.5em] px-[0.6em]">{content}</code>
+          </pre>
         );
         i++;
         continue;
@@ -280,9 +281,9 @@ function renderMarkdown(text: string): React.ReactNode {
         result.push(
           <pre
             key={`cb-${i}`}
-            className="mt-1 mb-1 rounded bg-[#2b2d31] p-2 text-sm leading-[1.125rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words border border-[#232428]"
+            className="my-0.5 rounded-[4px] bg-[#2b2d31] border border-[#1e1f22] text-[0.875rem] leading-[1.375rem] font-mono text-[#dbdee1] overflow-x-auto whitespace-pre-wrap break-words"
           >
-            <code>{codeLines.join("\n")}</code>
+            <code className="block py-[0.5em] px-[0.6em]">{codeLines.join("\n")}</code>
           </pre>
         );
         continue;
