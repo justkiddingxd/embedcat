@@ -246,6 +246,30 @@ function renderMarkdown(text: string): React.ReactNode {
   while (i < lines.length) {
     const line = lines[i];
 
+    // Code blocks (```)
+    if (line.startsWith("```")) {
+      const lang = line.slice(3).trim();
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++; // skip closing ```
+      result.push(
+        <pre
+          key={`cb-${i}`}
+          className="mt-1 mb-1 rounded-[4px] bg-[#1e1f22] border border-[#1e1f22]/50 p-2 text-[0.85em] font-mono text-[#e8e8e8] overflow-x-auto whitespace-pre-wrap break-words"
+        >
+          {lang && (
+            <div className="text-[10px] text-[#71717a] mb-1">{lang}</div>
+          )}
+          <code>{codeLines.join("\n")}</code>
+        </pre>
+      );
+      continue;
+    }
+
     if (line.startsWith(">>> ")) {
       const quoteLines = [line.slice(4), ...lines.slice(i + 1)];
       result.push(
