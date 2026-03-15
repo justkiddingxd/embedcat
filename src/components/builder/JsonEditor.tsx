@@ -49,14 +49,18 @@ export function JsonEditor() {
             return JSON.stringify(buildNadekoPayload(content, embeds), null, 2);
           case "discohook":
             return JSON.stringify(buildDiscohookPayload(content, embeds), null, 2);
-          default:
-            return JSON.stringify(buildClassicPayload(content, embeds, webhook), null, 2);
+          default: {
+            const { username: _u, avatar_url: _a, ...clean } = buildClassicPayload(content, embeds, webhook);
+            return JSON.stringify(clean, null, 2);
+          }
         }
       }
-      if (withActions) {
-        return JSON.stringify(buildComponentsV2WithActions(components, webhook, buttonActions), null, 2);
-      }
-      return JSON.stringify(buildComponentsV2Payload(components, webhook), null, 2);
+      const raw = withActions
+        ? buildComponentsV2WithActions(components, webhook, buttonActions)
+        : buildComponentsV2Payload(components, webhook);
+      // Strip webhook-only fields from JSON export
+      const { username: _u, avatar_url: _a, ...clean } = raw;
+      return JSON.stringify(clean, null, 2);
     },
     [mode, content, embeds, components, webhook, buttonActions]
   );
