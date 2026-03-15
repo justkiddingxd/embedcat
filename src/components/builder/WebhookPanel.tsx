@@ -111,6 +111,14 @@ export function WebhookPanel() {
         <div className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] bg-[#5865f2]/10 text-[#8b9fef]">
           <Bot className="size-3 shrink-0" />
           <span className="flex-1">{t.actions.botSendHint}</span>
+          <a
+            href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID}&permissions=2416307200&scope=bot`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-2 py-0.5 rounded bg-[#5865f2] text-white text-[10px] font-medium hover:bg-[#4752c4] transition-colors"
+          >
+            {t.webhook.addBot ?? "Add Bot"}
+          </a>
         </div>
       )}
 
