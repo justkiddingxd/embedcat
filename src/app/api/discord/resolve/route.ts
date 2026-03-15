@@ -89,6 +89,21 @@ async function fetchGuildRoles(
   return data;
 }
 
+let botGuildsCache: { data: { id: string }[]; ts: number } | null = null;
+
+async function fetchBotGuilds(token: string): Promise<{ id: string }[]> {
+  if (botGuildsCache && Date.now() - botGuildsCache.ts < CACHE_TTL) return botGuildsCache.data;
+
+  const res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+    headers: { Authorization: `Bot ${token}` },
+  });
+  if (!res.ok) return [];
+
+  const guilds = (await res.json()) as { id: string }[];
+  botGuildsCache = { data: guilds, ts: Date.now() };
+  return guilds;
+}
+
 async function fetchGuildRolesDirect(
   guildId: string,
   token: string
@@ -144,15 +159,42 @@ export async function POST(req: NextRequest) {
 
   const roleIds = (body.roleIds || []).filter((id) => ID_REGEX.test(id));
   if (roleIds.length > 0) {
-    let allRoles: RoleData[] = [];
+    const remaining = new Set(roleIds);
+
+    // Try specific guild first
     if (body.guildId && ID_REGEX.test(body.guildId)) {
-      allRoles = await fetchGuildRolesDirect(body.guildId, token);
-    } else if (body.webhookUrl) {
-      allRoles = await fetchGuildRoles(body.webhookUrl, token);
+      const roles = await fetchGuildRolesDirect(body.guildId, token);
+      for (const role of roles) {
+        if (remaining.has(role.id)) {
+          results.roles[role.id] = role;
+          remaining.delete(role.id);
+        }
+      }
     }
-    for (const role of allRoles) {
-      if (roleIds.includes(role.id)) {
-        results.roles[role.id] = role;
+
+    // Try webhook guild
+    if (remaining.size > 0 && body.webhookUrl) {
+      const roles = await fetchGuildRoles(body.webhookUrl, token);
+      for (const role of roles) {
+        if (remaining.has(role.id)) {
+          results.roles[role.id] = role;
+          remaining.delete(role.id);
+        }
+      }
+    }
+
+    // Fallback: search all bot guilds for remaining role IDs
+    if (remaining.size > 0) {
+      const guilds = await fetchBotGuilds(token);
+      for (const guild of guilds) {
+        if (remaining.size === 0) break;
+        const roles = await fetchGuildRolesDirect(guild.id, token);
+        for (const role of roles) {
+          if (remaining.has(role.id)) {
+            results.roles[role.id] = role;
+            remaining.delete(role.id);
+          }
+        }
       }
     }
   }
