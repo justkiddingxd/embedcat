@@ -9,7 +9,7 @@ export const authOptions: AuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "identify guilds",
+          scope: "identify guilds guilds.members.read",
         },
       },
     }),
