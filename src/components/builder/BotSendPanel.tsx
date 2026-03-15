@@ -209,10 +209,9 @@ export function BotSendPanel({
           href={inviteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          title={t.webhook.addBot ?? "Add Bot"}
-          className="shrink-0 flex items-center justify-center size-8 rounded-md border border-white/[0.06] bg-white/[0.02] text-[#5865f2] hover:bg-[#5865f2]/10 transition-colors"
+          className="shrink-0 px-2 py-1.5 rounded bg-[#5865f2] text-white text-[10px] font-medium hover:bg-[#4752c4] transition-colors"
         >
-          <Bot className="size-3.5" />
+          {t.webhook.addBot ?? "Add Bot"}
         </a>
         </div>
       )}
