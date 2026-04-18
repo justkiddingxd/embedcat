@@ -5,7 +5,7 @@ export const anthropic = createAnthropic({
   authToken: process.env.ANTHROPIC_AUTH_TOKEN,
 });
 
-export const MODEL_ID = "claude-opus-4-6";
+export const MODEL_ID = "claude-sonnet-4-6";
 
 export const SYSTEM_PROMPT = `You are embed.cat AI — a helpful assistant built into the embed.cat Discord embed builder tool.
 
