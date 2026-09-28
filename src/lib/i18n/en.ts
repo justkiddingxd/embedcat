@@ -5,6 +5,7 @@ export const en = {
     signOut: "Sign out",
     savedEmbeds: "Saved Embeds",
     configureUsers: "Configure Users",
+    openSource: "Open Source",
   },
   mode: {
     classic: "Classic",
@@ -265,6 +266,7 @@ export const en = {
   footer: {
     builtWith: "Built with",
     by: "by",
+    openSource: "Open source on",
   },
   docs: {
     title: "Documentation",
