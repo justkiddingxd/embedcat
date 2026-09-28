@@ -567,6 +567,16 @@ function HomeContent() {
         >
           rin.ms
         </a>
+        <span className="mx-1.5 text-[#3f3f46]">·</span>
+        {t.footer.openSource}{" "}
+        <a
+          href="https://github.com/justkiddingxd/embedcat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#a1a1aa] hover:text-white transition-colors"
+        >
+          GitHub
+        </a>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ export const ru: typeof en = {
     signOut: "Выйти",
     savedEmbeds: "Сохранённые",
     configureUsers: "Управление",
+    openSource: "Open Source",
   },
   mode: {
     classic: "Classic",
@@ -267,6 +268,7 @@ export const ru: typeof en = {
   footer: {
     builtWith: "Сделано с",
     by: "от",
+    openSource: "Открытый код на",
   },
   docs: {
     title: "Документация",
