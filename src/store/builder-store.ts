@@ -18,6 +18,7 @@ import type {
   ThumbnailComponent,
 } from "@/types/discord";
 import { ComponentType, ButtonStyle } from "@/types/discord";
+import { EMBEDCAT_LOGO_URL } from "@/lib/utils";
 
 export function createEmptyEmbed(): DiscordEmbed {
   return {
@@ -71,7 +72,7 @@ function createWelcomeEmbed(locale?: "en" | "ru"): DiscordEmbed {
     description: s.description,
     color: 0x5865f2,
     footer: { text: s.footer },
-    thumbnail: { url: "https://rin.ms/embedcat.png" },
+    thumbnail: { url: EMBEDCAT_LOGO_URL },
     fields: [
       { id: nanoid(), name: s.tipName, value: s.tipValue, inline: true },
       { id: nanoid(), name: s.linksName, value: s.linksValue, inline: true },
@@ -183,7 +184,7 @@ function createWelcomeContainer(locale?: "en" | "ru"): ContainerComponent {
         components: [
           { id: nanoid(), type: ComponentType.TextDisplay, content: s.tip },
         ],
-        accessory: { id: nanoid(), type: ComponentType.Thumbnail, media: { url: "https://rin.ms/embedcat.png" } },
+        accessory: { id: nanoid(), type: ComponentType.Thumbnail, media: { url: EMBEDCAT_LOGO_URL } },
       },
       { id: nanoid(), type: ComponentType.Separator, divider: true, spacing: 1 },
       { id: nanoid(), type: ComponentType.TextDisplay, content: s.features },
@@ -636,6 +637,10 @@ export const useBuilderStore = create<BuilderState>()(
     },
     {
       name: "embedcat-builder",
+      version: 1,
+      // v0 state may reference the old logo on rin.ms, which no longer resolves.
+      migrate: (persisted) =>
+        JSON.parse(JSON.stringify(persisted).replaceAll("https://rin.ms/embedcat.png", EMBEDCAT_LOGO_URL)),
       partialize: (state) => ({
         mode: state.mode,
         webhook: state.webhook,

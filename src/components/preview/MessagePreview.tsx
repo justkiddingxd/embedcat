@@ -18,6 +18,7 @@ import type {
   MediaGalleryItem,
 } from "@/types/discord";
 import { ComponentType, ButtonStyle } from "@/types/discord";
+import { EMBEDCAT_LOGO_URL } from "@/lib/utils";
 
 interface MentionResolver {
   resolveUser: (id: string) => { display_name: string } | null;
@@ -828,7 +829,7 @@ export default function MessagePreview() {
   const resolver = useMentionResolver(webhook.url, botGuildId);
 
   const username = webhook.username || "embed.cat";
-  const avatarUrl = webhook.avatar_url || "https://rin.ms/embedcat.png";
+  const avatarUrl = webhook.avatar_url || EMBEDCAT_LOGO_URL;
   const timestamp = currentTimestamp();
 
   const isEmpty =

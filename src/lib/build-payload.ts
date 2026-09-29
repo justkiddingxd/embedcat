@@ -16,6 +16,7 @@ import type {
 } from "@/types/discord";
 import { IS_COMPONENTS_V2, ButtonStyle } from "@/types/discord";
 import type { ActionItem, ButtonActionConfig } from "@/store/builder-store";
+import { EMBEDCAT_LOGO_URL } from "@/lib/utils";
 
 // --- Strip internal IDs from objects before sending to Discord ---
 
@@ -191,7 +192,7 @@ export function buildClassicPayload(
     if (cleaned.length > 0) payload.embeds = cleaned;
   }
   payload.username = webhook.username || "embed.cat";
-  payload.avatar_url = webhook.avatar_url || "https://rin.ms/embedcat.png";
+  payload.avatar_url = webhook.avatar_url || EMBEDCAT_LOGO_URL;
 
   return payload;
 }
@@ -209,7 +210,7 @@ export function buildComponentsV2Payload(
   };
 
   payload.username = webhook.username || "embed.cat";
-  payload.avatar_url = webhook.avatar_url || "https://rin.ms/embedcat.png";
+  payload.avatar_url = webhook.avatar_url || EMBEDCAT_LOGO_URL;
 
   return payload;
 }
