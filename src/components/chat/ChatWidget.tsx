@@ -6,7 +6,7 @@ import { Bot, X, Send, List, Plus, Trash2, Check, Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useBuilderStore } from "@/store/builder-store";
-import { buildClassicPayload, buildComponentsV2Payload, extractActionsFromPayload } from "@/lib/build-payload";
+import { buildClassicPayload, buildComponentsV2WithActions, extractActionsFromPayload } from "@/lib/build-payload";
 import type { BuilderMode } from "@/types/discord";
 
 const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
@@ -89,7 +89,7 @@ function renderInline(text: string, startKey: number): ReactNode[] {
 export function ChatWidget() {
   const { data: authSession } = useSession();
   const { t } = useLocale();
-  const { mode, content, embeds, components, webhook, loadFromPayload, importButtonActions } = useBuilderStore();
+  const { mode, content, embeds, components, webhook, buttonActions, setWebhook, loadFromPayload, importButtonActions } = useBuilderStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -325,13 +325,14 @@ export function ChatWidget() {
   const getEmbedContext = useCallback((): string => {
     try {
       if (mode === "classic") {
-        return JSON.stringify(buildClassicPayload(content, embeds, webhook));
+        return JSON.stringify({ mode, ...buildClassicPayload(content, embeds, webhook) });
       }
-      return JSON.stringify(buildComponentsV2Payload(components, webhook));
+      // Include action chains so the AI can keep (or edit) them when changing the message.
+      return JSON.stringify({ mode, ...buildComponentsV2WithActions(components, webhook, buttonActions) });
     } catch {
       return "{}";
     }
-  }, [mode, content, embeds, components, webhook]);
+  }, [mode, content, embeds, components, webhook, buttonActions]);
 
   const handleSend = useCallback(
     async (e?: { preventDefault: () => void }) => {
@@ -482,10 +483,17 @@ export function ChatWidget() {
       try {
         const payload = JSON.parse(jsonStr) as Record<string, unknown>;
         let targetMode: BuilderMode = "classic";
-        if (payload.components && !payload.embeds) {
+        if (payload.mode === "classic" || payload.mode === "components_v2") {
+          targetMode = payload.mode;
+        } else if (payload.components && !payload.embeds) {
           targetMode = "components_v2";
         }
         loadFromPayload(targetMode, payload);
+
+        const identity: { username?: string; avatar_url?: string } = {};
+        if (typeof payload.username === "string") identity.username = payload.username;
+        if (typeof payload.avatar_url === "string") identity.avatar_url = payload.avatar_url;
+        if (Object.keys(identity).length > 0) setWebhook(identity);
 
         // Import action chains from _actions on buttons
         const extracted = extractActionsFromPayload(payload);
@@ -498,7 +506,7 @@ export function ChatWidget() {
         void 0;
       }
     },
-    [loadFromPayload, importButtonActions]
+    [loadFromPayload, importButtonActions, setWebhook]
   );
 
   const formatDate = (dateStr: string) => {

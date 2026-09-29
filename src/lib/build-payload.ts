@@ -234,6 +234,9 @@ function injectActions(
       (c) => injectActions(c, actionsMap)
     );
   }
+  if (result.accessory && typeof result.accessory === "object") {
+    result.accessory = injectActions(result.accessory as Record<string, unknown>, actionsMap);
+  }
   return result;
 }
 
@@ -267,6 +270,9 @@ export function extractActionsFromPayload(
     }
     if (Array.isArray(obj.components)) {
       (obj.components as Record<string, unknown>[]).forEach(walk);
+    }
+    if (obj.accessory && typeof obj.accessory === "object") {
+      walk(obj.accessory as Record<string, unknown>);
     }
   };
   if (Array.isArray(payload.components)) {

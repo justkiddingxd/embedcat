@@ -10,7 +10,7 @@
     "bot": "npx tsx src/bot/index.ts"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/openai-compatible": "^2.0.80",
     "@auth/core": "^0.34.3",
     "@base-ui/react": "^1.2.0",
     "@prisma/adapter-pg": "^7.4.2",

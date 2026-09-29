@@ -1,12 +1,13 @@
-import { streamText, generateText } from "ai";
+import { streamText, type TextStreamPart } from "ai";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { nanoid } from "nanoid";
 import {
-  anthropic,
+  ai,
   MODEL_ID,
   SYSTEM_PROMPT,
+  applyMessageTool,
   DAILY_LIMIT,
   MAX_MESSAGE_LENGTH,
   MAX_CONTEXT_MESSAGES,
@@ -20,23 +21,37 @@ export const maxDuration = 60;
 
 const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
 
-function extractAndStrip(text: string): { clean: string; blocks: string[] } {
-  const blocks: string[] = [];
-  const clean = text.replace(/```(?:embed-json|json)?\n?([\s\S]*?)```/g, (_match, inner: string) => {
-    const trimmed = inner.trim();
-    if (!trimmed.startsWith("{")) return "";
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed.embeds || parsed.components || parsed.content !== undefined) {
-        blocks.push(trimmed);
-        return "";
-      }
-    } catch {
-      void 0;
-    }
-    return "";
-  });
-  return { clean: clean.replace(/\n{3,}/g, "\n\n").trim(), blocks };
+const tools = { apply_message: applyMessageTool };
+type StreamPart = TextStreamPart<typeof tools>;
+
+const EMBED_BLOCK_RE = /```(?:embed-json|json)?\n?([\s\S]*?)```/g;
+
+// Earlier assistant replies are stored with their messages as embed-json blocks (so the
+// chat can show Apply buttons again). The model doesn't need them: the current editor
+// state is sent separately, and replaying JSON would nudge it to write JSON as text.
+function stripEmbedBlocks(text: string): string {
+  return text
+    .replace(EMBED_BLOCK_RE, (match, inner: string) =>
+      inner.trim().startsWith("{") ? "[called apply_message]" : match
+    )
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// Turns an apply_message call into the payload format the chat UI applies to the editor.
+function toEmbedBlock(input: unknown): { block: string; summary: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const { summary, mode, content, embeds, components, username, avatar_url } = input as Record<string, unknown>;
+  const payload: Record<string, unknown> = { mode: mode === "components_v2" ? "components_v2" : "classic" };
+  if (payload.mode === "classic") {
+    if (typeof content === "string") payload.content = content;
+    payload.embeds = Array.isArray(embeds) ? embeds : [];
+  } else {
+    payload.components = Array.isArray(components) ? components : [];
+  }
+  if (typeof username === "string" && username) payload.username = username;
+  if (typeof avatar_url === "string" && avatar_url) payload.avatar_url = avatar_url;
+  return { block: JSON.stringify(payload), summary: typeof summary === "string" ? summary : "" };
 }
 
 export async function POST(req: Request) {
@@ -117,9 +132,12 @@ export async function POST(req: Request) {
     select: { id: true, role: true, content: true },
   });
 
-  const systemWithContext = embedContext
-    ? `${SYSTEM_PROMPT}\n\n## Current user embed state:\n\`\`\`json\n${embedContext}\n\`\`\``
-    : SYSTEM_PROMPT;
+  const now = new Date();
+  const systemWithContext = [
+    SYSTEM_PROMPT,
+    `# Current time\n${now.toISOString()} (UNIX ${Math.floor(now.getTime() / 1000)})`,
+    embedContext ? `# Current editor state\n\`\`\`json\n${embedContext}\n\`\`\`` : "",
+  ].filter(Boolean).join("\n\n");
 
   // Preventive summarization: compress old messages into a summary
   let messages: { role: "user" | "assistant" | "system"; content: string }[];
@@ -136,12 +154,13 @@ export async function POST(req: Request) {
       summary = oldMessages[0].content;
     } else {
       try {
-        const convo = oldMessages.map(m => `${m.role}: ${m.content}`).join("\n");
-        const { text } = await generateText({
-          model: anthropic(MODEL_ID),
+        const convo = oldMessages.map(m => `${m.role}: ${stripEmbedBlocks(m.content)}`).join("\n");
+        // The API always answers as an SSE stream, so even one-shot calls use streamText.
+        const text = await streamText({
+          model: ai(MODEL_ID),
           system: "Summarize this conversation in 2-3 sentences. Preserve key details: URLs, emoji IDs, style preferences, specific requests. Be concise. Start with: [Summary of previous conversation:",
           messages: [{ role: "user", content: convo }],
-        });
+        }).text;
         summary = text;
         console.log(`[chat] Summarized ${oldMessages.length} messages into ${summary.length} chars`);
       } catch (err) {
@@ -168,56 +187,69 @@ export async function POST(req: Request) {
       { role: "assistant", content: summary },
       ...recentMessages.map(m => ({
         role: m.role as "user" | "assistant",
-        content: m.content,
+        content: m.role === "assistant" ? stripEmbedBlocks(m.content) : m.content,
       })),
     ];
   } else {
     messages = history.map((m: { id: string; role: string; content: string }) => ({
       role: m.role as "user" | "assistant",
-      content: m.content,
+      content: m.role === "assistant" ? stripEmbedBlocks(m.content) : m.content,
     }));
   }
 
   const MAX_RETRIES = 2;
 
-  // Wrap stream creation with retry — if the stream fails before producing
-  // any text (e.g. gateway returns 400), we retry up to MAX_RETRIES times.
+  // Wrap stream creation with retry — if the stream fails before producing any
+  // output (e.g. the API returns 400), we retry up to MAX_RETRIES times.
   // On 400 errors, trim history in half and retry (likely context too long).
-  async function createStream(): Promise<{ textStream: AsyncIterable<string> }> {
+  async function createStream(): Promise<AsyncIterable<StreamPart>> {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const r = streamText({
-        model: anthropic(MODEL_ID),
+        model: ai(MODEL_ID),
         system: systemWithContext,
         messages,
+        tools,
       });
+      const reader = r.fullStream[Symbol.asyncIterator]();
+      const head: StreamPart[] = [];
+      let failure: unknown = null;
       try {
-        // Try to read first chunk to verify the stream actually works
-        const reader = r.textStream[Symbol.asyncIterator]();
-        const first = await reader.next();
-        // Re-wrap into an async iterable that yields the first chunk + rest
-        async function* replayStream() {
-          if (!first.done) yield first.value;
+        // Read up to the first real output to verify the stream actually works
+        while (true) {
+          const next = await reader.next();
+          if (next.done) break;
+          if (next.value.type === "error") {
+            failure = next.value.error;
+            break;
+          }
+          head.push(next.value);
+          if (["text-delta", "tool-input-start", "tool-call", "finish"].includes(next.value.type)) break;
+        }
+      } catch (err) {
+        failure = err;
+      }
+      if (!failure) {
+        // Re-wrap into an async iterable that yields the buffered parts + rest
+        return (async function* replayStream() {
+          yield* head;
           while (true) {
             const next = await reader.next();
-            if (next.done) break;
+            if (next.done) return;
             yield next.value;
           }
+        })();
+      }
+      const statusCode = (failure as { statusCode?: number }).statusCode;
+      console.error(`[chat] Stream attempt ${attempt + 1} failed (status: ${statusCode}, messages: ${messages.length}):`, failure);
+      if (attempt < MAX_RETRIES) {
+        if (statusCode === 400 && messages.length > 2) {
+          const keep = Math.max(2, Math.floor(messages.length / 2));
+          messages = messages.slice(-keep);
+          console.log(`[chat] Trimmed history to ${messages.length} messages for retry`);
         }
-        return { textStream: replayStream() };
-      } catch (err) {
-        const statusCode = (err as { statusCode?: number }).statusCode;
-        console.error(`[chat] Stream attempt ${attempt + 1} failed (status: ${statusCode}, messages: ${messages.length}):`, err);
-        if (attempt < MAX_RETRIES) {
-          // On 400, trim history — likely context too long
-          if (statusCode === 400 && messages.length > 2) {
-            const keep = Math.max(2, Math.floor(messages.length / 2));
-            messages = messages.slice(-keep);
-            console.log(`[chat] Trimmed history to ${messages.length} messages for retry`);
-          }
-          await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
-        } else {
-          throw err;
-        }
+        await new Promise((res) => setTimeout(res, 1000 * (attempt + 1)));
+      } else {
+        throw failure;
       }
     }
     throw new Error("All stream attempts exhausted");
@@ -235,8 +267,7 @@ export async function POST(req: Request) {
   }
 
   const encoder = new TextEncoder();
-  const textStream = stream.textStream;
-  let fullText = "";
+  let visibleText = "";
   let buffer = "";
   let insideCodeBlock = false;
   let codeBlockContent = "";
@@ -245,8 +276,24 @@ export async function POST(req: Request) {
   const outputStream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of textStream) {
-          fullText += chunk;
+        const emit = (text: string) => {
+          visibleText += text;
+          controller.enqueue(encoder.encode(text));
+        };
+
+        for await (const part of stream) {
+          if (part.type === "error") throw part.error;
+          if (part.type === "tool-call") {
+            const applied = part.toolName === "apply_message" && !part.invalid ? toEmbedBlock(part.input) : null;
+            if (applied) {
+              embedBlocks.push(applied.block);
+              // The model is asked to write a sentence before the call; fall back to its summary.
+              if (!visibleText.trim() && !buffer.trim() && applied.summary) emit(applied.summary);
+            }
+            continue;
+          }
+          if (part.type !== "text-delta") continue;
+          const chunk = part.text;
           buffer += chunk;
 
           while (buffer.length > 0) {
@@ -278,7 +325,7 @@ export async function POST(req: Request) {
                 }
 
                 if (!isEmbed) {
-                  controller.enqueue(encoder.encode("```" + codeBlockContent + "```"));
+                  emit("```" + codeBlockContent + "```");
                 }
                 codeBlockContent = "";
               }
@@ -287,13 +334,13 @@ export async function POST(req: Request) {
               if (openIdx === -1) {
                 const safe = buffer.length > 3 ? buffer.slice(0, -3) : "";
                 if (safe) {
-                  controller.enqueue(encoder.encode(safe));
+                  emit(safe);
                   buffer = buffer.slice(safe.length);
                 }
                 break;
               } else {
                 if (openIdx > 0) {
-                  controller.enqueue(encoder.encode(buffer.slice(0, openIdx)));
+                  emit(buffer.slice(0, openIdx));
                 }
                 buffer = buffer.slice(openIdx + 3);
                 insideCodeBlock = true;
@@ -304,7 +351,7 @@ export async function POST(req: Request) {
         }
 
         if (buffer.length > 0 && !insideCodeBlock) {
-          controller.enqueue(encoder.encode(buffer));
+          emit(buffer);
         }
 
         if (embedBlocks.length > 0) {
@@ -318,7 +365,9 @@ export async function POST(req: Request) {
             data: {
               sessionId: chatSessionId!,
               role: "assistant",
-              content: fullText,
+              content: [visibleText.trim(), ...embedBlocks.map((b) => "```embed-json\n" + b + "\n```")]
+                .filter(Boolean)
+                .join("\n\n"),
             },
           }),
           prisma.appUser.update({
@@ -338,7 +387,7 @@ export async function POST(req: Request) {
           messageCount: messages.length,
         });
         // If we already sent some text, close gracefully
-        if (fullText.length > 0) {
+        if (visibleText.length > 0 || embedBlocks.length > 0) {
           controller.close();
         } else {
           controller.error(err);

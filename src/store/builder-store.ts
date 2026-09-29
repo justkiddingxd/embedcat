@@ -512,6 +512,9 @@ export const useBuilderStore = create<BuilderState>()(
             if (Array.isArray(result.items)) {
               result.items = result.items.map((i) => assignIds(i));
             }
+            if (result.accessory && typeof result.accessory === "object") {
+              result.accessory = assignIds(result.accessory as JsonObj);
+            }
             return result;
           };
           const components = data.components.map((c: JsonObj) =>
