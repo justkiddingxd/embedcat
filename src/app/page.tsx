@@ -127,7 +127,13 @@ function ModeToggle({ mode, onModeChange, labels }: { mode: string; onModeChange
   useEffect(() => {
     const el = mode === "classic" ? classicRef.current : componentsRef.current;
     if (!el) return;
-    setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    const measure = () => setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    measure();
+    // Re-measure when the buttons resize, e.g. when the web font swaps in after a full reload.
+    const ro = new ResizeObserver(measure);
+    if (classicRef.current) ro.observe(classicRef.current);
+    if (componentsRef.current) ro.observe(componentsRef.current);
+    return () => ro.disconnect();
   }, [mode]);
 
   return (
