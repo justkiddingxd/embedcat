@@ -232,6 +232,7 @@ interface BuilderState {
   mode: BuilderMode;
   webhook: WebhookConfig;
   botGuildId: string;
+  botChannelId: string;
   content: string;
   embeds: DiscordEmbed[];
   components: TopLevelComponent[];
@@ -241,6 +242,7 @@ interface BuilderState {
   setMode: (mode: BuilderMode) => void;
   setWebhook: (webhook: Partial<WebhookConfig>) => void;
   setBotGuildId: (id: string) => void;
+  setBotChannelId: (id: string) => void;
 
   setContent: (content: string) => void;
   addEmbed: () => void;
@@ -300,6 +302,7 @@ export const useBuilderStore = create<BuilderState>()(
   mode: "classic",
   webhook: { url: "" },
   botGuildId: "",
+  botChannelId: "",
   content: "",
   embeds: [createWelcomeEmbed()],
   components: [createWelcomeContainer()],
@@ -310,6 +313,7 @@ export const useBuilderStore = create<BuilderState>()(
   setWebhook: (webhook) =>
     rawSet((s) => ({ webhook: { ...s.webhook, ...webhook } })),
   setBotGuildId: (id) => rawSet({ botGuildId: id }),
+  setBotChannelId: (id) => rawSet({ botChannelId: id }),
 
   setContent: (content) => set({ content }),
 

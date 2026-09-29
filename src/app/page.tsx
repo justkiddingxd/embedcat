@@ -167,7 +167,7 @@ function ModeToggle({ mode, onModeChange, labels }: { mode: string; onModeChange
 }
 
 function HomeContent() {
-  const { mode, setMode, reset, content, embeds, components, webhook, loadFromPayload, undo, redo, canUndo, canRedo } = useBuilderStore();
+  const { mode, setMode, reset, loadFromPayload, undo, redo, canUndo, canRedo } = useBuilderStore();
   const { t } = useLocale();
   const { toast } = useToast();
   const { data: session } = useSession();
@@ -218,23 +218,35 @@ function HomeContent() {
       });
   }, [searchParams, loadFromPayload]);
 
-  const buildCurrentPayload = useCallback(() => {
-    return mode === "classic"
-      ? buildClassicPayload(content, embeds, webhook)
-      : buildComponentsV2Payload(components, webhook);
-  }, [mode, content, embeds, components, webhook]);
+  // Save/share read the store directly: the AI chat calls them right after applying a
+  // message, before this component re-renders with the new state.
+  const currentPayload = () => {
+    const s = useBuilderStore.getState();
+    return {
+      mode: s.mode,
+      title: s.embeds[0]?.title || "Untitled",
+      payload: s.mode === "classic"
+        ? buildClassicPayload(s.content, s.embeds, s.webhook)
+        : buildComponentsV2Payload(s.components, s.webhook),
+    };
+  };
+
+  const createShareLink = async (): Promise<string> => {
+    const { mode, payload, title } = currentPayload();
+    const res = await fetch("/api/embeds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, payload, title, saveToProfile: false }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as { id: string };
+    return `${window.location.origin}?id=${data.id}`;
+  };
 
   const handleCopyLink = async () => {
     setShareLoading(true);
     try {
-      const payload = buildCurrentPayload();
-      const res = await fetch("/api/embeds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: false }),
-      });
-      const data = (await res.json()) as { id: string };
-      const url = `${window.location.origin}?id=${data.id}`;
+      const url = await createShareLink();
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       toast(t.toast.linkCopied);
@@ -245,30 +257,33 @@ function HomeContent() {
 
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
 
-  const handleSaveToProfile = async () => {
-    if (!session?.user) return;
+  const handleSaveToProfile = async (titleOverride?: string): Promise<boolean> => {
+    if (!session?.user) return false;
     setSaveStatus("saving");
     try {
-      const payload = buildCurrentPayload();
+      const { mode, payload, title } = currentPayload();
       if (currentSavedId) {
-        await fetch(`/api/embeds/${currentSavedId}`, {
+        const res = await fetch(`/api/embeds/${currentSavedId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode, payload }),
+          body: JSON.stringify({ mode, payload, ...(titleOverride ? { title: titleOverride } : {}) }),
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } else {
         const res = await fetch("/api/embeds", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode, payload, title: embeds[0]?.title || "Untitled", saveToProfile: true }),
+          body: JSON.stringify({ mode, payload, title: titleOverride || title, saveToProfile: true }),
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as { id: string };
         setCurrentSavedId(data.id);
       }
       setSaveStatus("saved");
       toast(t.toast.saved);
       setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch { void 0; setSaveStatus("idle"); }
+      return true;
+    } catch { setSaveStatus("idle"); return false; }
   };
 
   const loadSaved = async () => {
@@ -369,7 +384,7 @@ function HomeContent() {
               </button>
               {session?.user && (
                 <button
-                  onClick={handleSaveToProfile}
+                  onClick={() => handleSaveToProfile()}
                   disabled={saveStatus === "saving"}
                   className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.06] px-2.5 text-[0.8rem] font-medium text-[#71717a] hover:bg-white/[0.04] hover:text-[#a1a1aa] transition-colors disabled:opacity-50"
                 >
@@ -555,7 +570,11 @@ function HomeContent() {
           </div>
         </div>
       )}
-      <ChatWidget />
+      <ChatWidget
+        onSave={handleSaveToProfile}
+        onShareLink={createShareLink}
+        hasOpenSaved={currentSavedId !== null}
+      />
       <div className="fixed bottom-1 left-1/2 -translate-x-1/2 text-xs text-[#71717a] md:left-auto md:translate-x-0 md:right-3 md:bottom-2">
         {t.footer.builtWith}{" "}
         <img

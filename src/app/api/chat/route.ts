@@ -7,7 +7,7 @@ import {
   ai,
   MODEL_ID,
   SYSTEM_PROMPT,
-  applyMessageTool,
+  AI_TOOLS,
   DAILY_LIMIT,
   MAX_MESSAGE_LENGTH,
   MAX_CONTEXT_MESSAGES,
@@ -20,8 +20,26 @@ const KEEP_RECENT = 6; // keep last N messages as-is
 export const maxDuration = 60;
 
 const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
+const ACTIONS_DELIMITER = "\n\n---AI_ACTIONS---\n";
 
-const tools = { apply_message: applyMessageTool };
+const tools = AI_TOOLS;
+
+const CLIENT_ACTION_TYPES: Record<string, string> = {
+  send: "send_to_discord",
+  save: "save_message",
+  share_link: "create_share_link",
+};
+
+// Converts the tools' `actions` into the actions the chat UI runs in the browser.
+function toClientActions(actions: unknown): { type: string; input: Record<string, unknown> }[] {
+  if (!Array.isArray(actions)) return [];
+  return actions.flatMap((a) => {
+    if (!a || typeof a !== "object") return [];
+    const { type, ...input } = a as Record<string, unknown>;
+    const clientType = typeof type === "string" ? CLIENT_ACTION_TYPES[type] : undefined;
+    return clientType ? [{ type: clientType, input }] : [];
+  });
+}
 type StreamPart = TextStreamPart<typeof tools>;
 
 const EMBED_BLOCK_RE = /```(?:embed-json|json)?\n?([\s\S]*?)```/g;
@@ -63,10 +81,11 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { message, sessionId, embedContext } = body as {
+  const { message, sessionId, embedContext, siteState } = body as {
     message: string;
     sessionId?: string;
     embedContext?: string;
+    siteState?: { webhookUrlSet?: boolean; botChannelSelected?: boolean; hasOpenSaved?: boolean };
   };
 
   if (!message || typeof message !== "string") {
@@ -137,6 +156,14 @@ export async function POST(req: Request) {
     SYSTEM_PROMPT,
     `# Current time\n${now.toISOString()} (UNIX ${Math.floor(now.getTime() / 1000)})`,
     embedContext ? `# Current editor state\n\`\`\`json\n${embedContext}\n\`\`\`` : "",
+    siteState
+      ? [
+          "# Send & save status",
+          `- Webhook URL: ${siteState.webhookUrlSet ? "set" : "not set"}`,
+          `- Bot server and channel: ${siteState.botChannelSelected ? "selected" : "not selected"}`,
+          `- Opened saved embed: ${siteState.hasOpenSaved ? "yes (save_message updates it)" : "no (save_message creates a new one)"}`,
+        ].join("\n")
+      : "",
   ].filter(Boolean).join("\n\n");
 
   // Preventive summarization: compress old messages into a summary
@@ -272,6 +299,7 @@ export async function POST(req: Request) {
   let insideCodeBlock = false;
   let codeBlockContent = "";
   const embedBlocks: string[] = [];
+  const clientActions: { type: string; input: Record<string, unknown> }[] = [];
 
   const outputStream = new ReadableStream({
     async start(controller) {
@@ -284,12 +312,20 @@ export async function POST(req: Request) {
         for await (const part of stream) {
           if (part.type === "error") throw part.error;
           if (part.type === "tool-call") {
-            const applied = part.toolName === "apply_message" && !part.invalid ? toEmbedBlock(part.input) : null;
-            if (applied) {
+            if (part.invalid) continue;
+            const input = (part.input ?? {}) as { summary?: unknown; actions?: unknown };
+            let summary = "";
+            if (part.toolName === "apply_message") {
+              const applied = toEmbedBlock(input);
+              if (!applied) continue;
               embedBlocks.push(applied.block);
-              // The model is asked to write a sentence before the call; fall back to its summary.
-              if (!visibleText.trim() && !buffer.trim() && applied.summary) emit(applied.summary);
+              summary = applied.summary;
+            } else if (part.toolName === "run_actions" && typeof input.summary === "string") {
+              summary = input.summary;
             }
+            clientActions.push(...toClientActions(input.actions));
+            // The model is asked to write a sentence before the call; fall back to its summary.
+            if (!visibleText.trim() && !buffer.trim() && summary) emit(summary);
             continue;
           }
           if (part.type !== "text-delta") continue;
@@ -356,6 +392,9 @@ export async function POST(req: Request) {
 
         if (embedBlocks.length > 0) {
           controller.enqueue(encoder.encode(EMBED_DELIMITER + JSON.stringify(embedBlocks)));
+        }
+        if (clientActions.length > 0) {
+          controller.enqueue(encoder.encode(ACTIONS_DELIMITER + JSON.stringify(clientActions)));
         }
 
         controller.close();

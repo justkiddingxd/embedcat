@@ -8,7 +8,8 @@ export const ai = createOpenAICompatible({
   includeUsage: true,
 });
 
-export const MODEL_ID = "gpt-6-sol";
+// Override with AI_MODEL in .env.local (restart the web process to apply).
+export const MODEL_ID = process.env.AI_MODEL || "gpt-5.6-terra";
 
 export const SYSTEM_PROMPT = `You are embed.cat AI, the assistant built into embed.cat — a visual builder for Discord messages (classic embeds and Components V2) that can send them through a webhook or through the embed.cat bot.
 
@@ -19,6 +20,19 @@ Your job: turn what the user wants into a polished, valid Discord message and pu
 - Before the tool call, write ONE short sentence to the user saying what you made or changed ("Сделал тёмное объявление с тремя полями и кнопкой на сайт"). Never paste JSON, code or field-by-field descriptions into your text.
 - Only answer in text (no tool call) when the user asks a question, or when a request is genuinely ambiguous and a wrong guess would waste their work. Otherwise make reasonable choices and build it.
 - Reply in the language the user writes in. Be brief: this is a tool, not a conversation.
+
+# Sending, saving and sharing
+Besides changing the message you can act on it: send it to Discord, save it to the user's Saved Embeds, or create a share link. Call exactly ONE tool per reply:
+- Change the message and act on it ("make X and send it", "fix the typo and save"): \`apply_message\` with \`actions\`.
+- Act on the message as it is ("send it", "save this as Rules", "give me a link"): \`run_actions\`. Don't re-apply an unchanged message.
+Actions:
+- \`send\` — target "webhook" uses the webhook URL on the Webhook tab (if the user pastes a webhook URL, pass it as \`webhook_url\`); target "bot" uses the server and channel picked on the Bot tab and is REQUIRED when the message has non-link buttons.
+- \`save\` — saves to Saved Embeds, or updates the saved embed the user opened; optional \`title\`.
+- \`share_link\` — creates a share link; it is shown in the chat.
+Rules:
+- Send ONLY when the user's latest message explicitly asks to send / post / publish. Never send on your own initiative, "to test", or because an earlier message asked for it. Saving and links are fine whenever the user asks.
+- Check "Send & save status" below. If sending isn't possible (no webhook URL, no channel picked), don't send; tell the user what to set up instead.
+- Results (success, errors, the link) are shown to the user automatically. Say what you are doing ("Отправляю через вебхук"), never claim it already succeeded.
 
 # Editing the current message
 - The user's current editor state is given below as JSON (with \`mode\`). Treat it as the source of truth for "change", "add", "make it …" requests.
@@ -85,11 +99,29 @@ Embed titles, author and footer don't render headings or lists.
 # About embed.cat (for questions)
 - Two editors: Classic (embeds) and Components; switch at the top. Live Discord-like preview on the right. Undo/redo, JSON import/export.
 - Send via Webhook (paste a webhook URL; optional thread) or via Bot (add the embed.cat bot, pick server and channel; required for interactive buttons).
-- "Save" keeps a message in the user's profile (Saved Embeds); "Link" creates a share link. Saved embeds can be sent by button actions via embedId.
+- "Save" keeps a message in the user's profile (Saved Embeds); "Link" creates a share link. Saved embeds can be sent by button actions via embedId. You can send, save and share for the user with your tools.
 - Documentation: https://embed.cat/docs. Community: https://discord.gg/HvZGEYEgt5. Source code: https://github.com/justkiddingxd/embedcat.
 - AI chat requires signing in with Discord and is limited to 5 requests per day.`;
 
-// No execute: the tool call is turned into an "Apply" button in the chat UI.
+export type MessageAction = { type: "send" | "save" | "share_link"; target?: "webhook" | "bot"; webhook_url?: string; title?: string };
+
+const messageActionsSchema: Parameters<typeof jsonSchema>[0] = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      type: { type: "string", enum: ["send", "save", "share_link"] },
+      target: { type: "string", enum: ["webhook", "bot"], description: "send: webhook (URL on the Webhook tab) or bot (server/channel on the Bot tab; required for non-link buttons)." },
+      webhook_url: { type: "string", description: "send: only if the user gave a webhook URL in the chat." },
+      title: { type: "string", description: "save: optional name for the saved embed." },
+    },
+    required: ["type"],
+  },
+};
+
+// None of the tools have execute: the route forwards the calls to the chat UI, which shows
+// an Apply button for apply_message and runs the actions in the browser. Models here make
+// one tool call per reply, so a change plus its follow-up actions fit in a single call.
 export const applyMessageTool = tool({
   description:
     "Put a complete Discord message into the user's editor (shown as an Apply button). Replaces the whole current message, so include everything that should stay.",
@@ -101,6 +133,7 @@ export const applyMessageTool = tool({
     components?: Record<string, unknown>[];
     username?: string;
     avatar_url?: string;
+    actions?: MessageAction[];
   }>({
     type: "object",
     properties: {
@@ -149,10 +182,35 @@ export const applyMessageTool = tool({
       },
       username: { type: "string", description: "Webhook display name." },
       avatar_url: { type: "string", description: "Webhook avatar image URL." },
+      actions: {
+        ...messageActionsSchema,
+        description: "Optional: what to do with the message right after applying it. Only include send when the user explicitly asked to send.",
+      },
     },
     required: ["summary", "mode"],
   }),
 });
+
+export const runActionsTool = tool({
+  description:
+    "Send, save or share the message currently in the editor, without changing it. Only send when the user's latest message explicitly asks to.",
+  inputSchema: jsonSchema<{ summary: string; actions: MessageAction[] }>({
+    type: "object",
+    properties: {
+      summary: {
+        type: "string",
+        description: "One short sentence for the user, in their language, saying what you are doing.",
+      },
+      actions: messageActionsSchema,
+    },
+    required: ["summary", "actions"],
+  }),
+});
+
+export const AI_TOOLS = {
+  apply_message: applyMessageTool,
+  run_actions: runActionsTool,
+};
 
 export const DAILY_LIMIT = 5;
 export const MAX_MESSAGE_LENGTH = 3000;

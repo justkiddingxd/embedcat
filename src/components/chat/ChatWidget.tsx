@@ -2,21 +2,55 @@
 
 import type { ReactNode } from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Bot, X, Send, List, Plus, Trash2, Check, Pencil } from "lucide-react";
+import { Bot, X, Send, List, Plus, Trash2, Check, Pencil, AlertCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useBuilderStore } from "@/store/builder-store";
-import { buildClassicPayload, buildComponentsV2WithActions, extractActionsFromPayload } from "@/lib/build-payload";
+import {
+  buildClassicPayload,
+  buildComponentsV2Payload,
+  buildComponentsV2WithActions,
+  extractActionsFromPayload,
+  hasNonLinkButtons,
+  sendBotMessage,
+  sendWebhookMessage,
+} from "@/lib/build-payload";
 import type { BuilderMode } from "@/types/discord";
 
 const EMBED_DELIMITER = "\n\n---EMBED_DATA---\n";
+const ACTIONS_DELIMITER = "\n\n---AI_ACTIONS---\n";
+const WEBHOOK_URL_RE = /^https:\/\/(canary\.|ptb\.)?discord\.com\/api\/webhooks\/\d+\/.+$/;
+
+interface AiAction {
+  type: string;
+  input: Record<string, unknown>;
+}
+
+interface ActionResult {
+  ok: boolean;
+  text: string;
+  url?: string;
+}
+
+// The part of a raw AI response that is shown to the user (before the data sections).
+function visiblePart(raw: string): string {
+  const cuts = [raw.indexOf(EMBED_DELIMITER), raw.indexOf(ACTIONS_DELIMITER)].filter((i) => i !== -1);
+  return cuts.length ? raw.slice(0, Math.min(...cuts)) : raw;
+}
 
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   embedBlocks?: string[];
+  actionResults?: ActionResult[];
   createdAt: string;
+}
+
+interface ChatWidgetProps {
+  onSave?: (title?: string) => Promise<boolean>;
+  onShareLink?: () => Promise<string>;
+  hasOpenSaved?: boolean;
 }
 
 interface ChatSession {
@@ -86,7 +120,7 @@ function renderInline(text: string, startKey: number): ReactNode[] {
 
 
 
-export function ChatWidget() {
+export function ChatWidget({ onSave, onShareLink, hasOpenSaved }: ChatWidgetProps) {
   const { data: authSession } = useSession();
   const { t } = useLocale();
   const { mode, content, embeds, components, webhook, buttonActions, setWebhook, loadFromPayload, importButtonActions } = useBuilderStore();
@@ -334,6 +368,84 @@ export function ChatWidget() {
     }
   }, [mode, content, embeds, components, webhook, buttonActions]);
 
+  const handleApplyEmbed = useCallback(
+    (jsonStr: string) => {
+      try {
+        const payload = JSON.parse(jsonStr) as Record<string, unknown>;
+        let targetMode: BuilderMode = "classic";
+        if (payload.mode === "classic" || payload.mode === "components_v2") {
+          targetMode = payload.mode;
+        } else if (payload.components && !payload.embeds) {
+          targetMode = "components_v2";
+        }
+        loadFromPayload(targetMode, payload);
+
+        const identity: { username?: string; avatar_url?: string } = {};
+        if (typeof payload.username === "string") identity.username = payload.username;
+        if (typeof payload.avatar_url === "string") identity.avatar_url = payload.avatar_url;
+        if (Object.keys(identity).length > 0) setWebhook(identity);
+
+        // Import action chains from _actions on buttons
+        const extracted = extractActionsFromPayload(payload);
+        if (Object.keys(extracted).length > 0) {
+          importButtonActions(extracted);
+        }
+
+        setAppliedBlocks((prev) => new Set(prev).add(jsonStr));
+      } catch {
+        void 0;
+      }
+    },
+    [loadFromPayload, importButtonActions, setWebhook]
+  );
+
+  // Runs send/save/share actions the AI asked for, on its latest message.
+  const runActions = useCallback(
+    async (actions: AiAction[], blocks: string[]): Promise<ActionResult[]> => {
+      const latest = blocks[blocks.length - 1];
+      if (latest) handleApplyEmbed(latest);
+
+      const results: ActionResult[] = [];
+      for (const action of actions) {
+        try {
+          if (action.type === "send_to_discord") {
+            const url = action.input.webhook_url;
+            if (typeof url === "string" && WEBHOOK_URL_RE.test(url)) useBuilderStore.getState().setWebhook({ url });
+            const s = useBuilderStore.getState();
+            const payload = s.mode === "classic"
+              ? buildClassicPayload(s.content, s.embeds, s.webhook)
+              : buildComponentsV2Payload(s.components, s.webhook);
+            if (action.input.target === "bot") {
+              if (!s.botChannelId || !s.botGuildId) {
+                results.push({ ok: false, text: t.chat.noBotChannel });
+                continue;
+              }
+              const res = await sendBotMessage(s.botChannelId, s.botGuildId, payload, s.components, s.buttonActions);
+              results.push(res.success ? { ok: true, text: t.chat.sentViaBot } : { ok: false, text: `${t.chat.actionFailed}: ${res.error ?? ""}` });
+            } else if (s.mode === "components_v2" && hasNonLinkButtons(s.components)) {
+              results.push({ ok: false, text: t.chat.needsBotForButtons });
+            } else if (!WEBHOOK_URL_RE.test(s.webhook.url)) {
+              results.push({ ok: false, text: t.chat.noWebhookUrl });
+            } else {
+              const res = await sendWebhookMessage(s.webhook, payload);
+              results.push(res.success ? { ok: true, text: t.chat.sentViaWebhook } : { ok: false, text: `${t.chat.actionFailed}: ${res.error ?? ""}` });
+            }
+          } else if (action.type === "save_message") {
+            const title = typeof action.input.title === "string" ? action.input.title : undefined;
+            const ok = onSave ? await onSave(title) : false;
+            results.push(ok ? { ok: true, text: t.chat.savedToProfile } : { ok: false, text: authSession?.user ? t.chat.actionFailed : t.chat.signInToSave });
+          } else if (action.type === "create_share_link" && onShareLink) {
+            results.push({ ok: true, text: t.chat.shareLinkCreated, url: await onShareLink() });
+          }
+        } catch (err) {
+          results.push({ ok: false, text: `${t.chat.actionFailed}: ${err instanceof Error ? err.message : String(err)}` });
+        }
+      }
+      return results;
+    },
+    [handleApplyEmbed, onSave, onShareLink, authSession?.user, t]
+  );
+
   const handleSend = useCallback(
     async (e?: { preventDefault: () => void }) => {
       if (e) e.preventDefault();
@@ -370,6 +482,14 @@ export function ChatWidget() {
             message: trimmed,
             sessionId,
             embedContext: getEmbedContext(),
+            siteState: (() => {
+              const s = useBuilderStore.getState();
+              return {
+                webhookUrlSet: WEBHOOK_URL_RE.test(s.webhook.url),
+                botChannelSelected: !!(s.botChannelId && s.botGuildId),
+                hasOpenSaved: !!hasOpenSaved,
+              };
+            })(),
           }),
         });
 
@@ -409,7 +529,7 @@ export function ChatWidget() {
         typewriterMsgId.current = aiMsg.id;
 
         const tick = () => {
-          const buf = typewriterBuffer.current;
+          const buf = visiblePart(typewriterBuffer.current);
           const shown = typewriterShown.current;
           if (shown < buf.length) {
             const step = Math.max(1, Math.min(3, Math.ceil((buf.length - shown) / 10)));
@@ -431,14 +551,23 @@ export function ChatWidget() {
         }
 
         const rawFull = typewriterBuffer.current;
-        let cleanText = rawFull;
+        const cleanText = visiblePart(rawFull).trim();
         let embedBlocks: string[] = [];
+        let actions: AiAction[] = [];
 
-        const delimIdx = rawFull.indexOf(EMBED_DELIMITER);
-        if (delimIdx !== -1) {
-          cleanText = rawFull.slice(0, delimIdx).trim();
+        const embedIdx = rawFull.indexOf(EMBED_DELIMITER);
+        const actionsIdx = rawFull.indexOf(ACTIONS_DELIMITER);
+        if (embedIdx !== -1) {
+          const end = actionsIdx > embedIdx ? actionsIdx : rawFull.length;
           try {
-            embedBlocks = JSON.parse(rawFull.slice(delimIdx + EMBED_DELIMITER.length)) as string[];
+            embedBlocks = JSON.parse(rawFull.slice(embedIdx + EMBED_DELIMITER.length, end)) as string[];
+          } catch {
+            void 0;
+          }
+        }
+        if (actionsIdx !== -1) {
+          try {
+            actions = JSON.parse(rawFull.slice(actionsIdx + ACTIONS_DELIMITER.length)) as AiAction[];
           } catch {
             void 0;
           }
@@ -468,6 +597,13 @@ export function ChatWidget() {
             m.id === aiMsg.id ? { ...m, content: cleanText, embedBlocks } : m
           )
         );
+
+        if (actions.length > 0) {
+          const actionResults = await runActions(actions, embedBlocks);
+          setMessages((prev) =>
+            prev.map((m) => (m.id === aiMsg.id ? { ...m, actionResults } : m))
+          );
+        }
       } catch {
         setError(t.chat.failedToSend);
         setMessages((prev) => prev.filter((m) => m.id !== aiMsg.id));
@@ -475,38 +611,7 @@ export function ChatWidget() {
         setIsStreaming(false);
       }
     },
-    [input, isStreaming, sessionId, getEmbedContext]
-  );
-
-  const handleApplyEmbed = useCallback(
-    (jsonStr: string) => {
-      try {
-        const payload = JSON.parse(jsonStr) as Record<string, unknown>;
-        let targetMode: BuilderMode = "classic";
-        if (payload.mode === "classic" || payload.mode === "components_v2") {
-          targetMode = payload.mode;
-        } else if (payload.components && !payload.embeds) {
-          targetMode = "components_v2";
-        }
-        loadFromPayload(targetMode, payload);
-
-        const identity: { username?: string; avatar_url?: string } = {};
-        if (typeof payload.username === "string") identity.username = payload.username;
-        if (typeof payload.avatar_url === "string") identity.avatar_url = payload.avatar_url;
-        if (Object.keys(identity).length > 0) setWebhook(identity);
-
-        // Import action chains from _actions on buttons
-        const extracted = extractActionsFromPayload(payload);
-        if (Object.keys(extracted).length > 0) {
-          importButtonActions(extracted);
-        }
-
-        setAppliedBlocks((prev) => new Set(prev).add(jsonStr));
-      } catch {
-        void 0;
-      }
-    },
-    [loadFromPayload, importButtonActions, setWebhook]
+    [input, isStreaming, sessionId, getEmbedContext, hasOpenSaved, runActions]
   );
 
   const formatDate = (dateStr: string) => {
@@ -748,6 +853,28 @@ export function ChatWidget() {
                           t.chat.applyEmbed
                         )}
                       </button>
+                    ))}
+
+                    {(msg.actionResults || []).map((r, ri) => (
+                      <div
+                        key={`action-${msg.id}-${ri}`}
+                        className={`mt-1.5 flex items-start gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium max-w-full ${
+                          r.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+                        }`}
+                      >
+                        {r.ok ? <Check className="w-3 h-3 mt-px shrink-0" /> : <AlertCircle className="w-3 h-3 mt-px shrink-0" />}
+                        <span className="min-w-0 break-all">
+                          {r.text}
+                          {r.url && (
+                            <>
+                              {" "}
+                              <a href={r.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-emerald-300">
+                                {r.url}
+                              </a>
+                            </>
+                          )}
+                        </span>
+                      </div>
                     ))}
 
                     <span className="text-[10px] text-[#71717a] mt-1 px-1">

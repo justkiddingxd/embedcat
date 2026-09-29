@@ -33,7 +33,8 @@ export function WebhookPanel() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [showCheck, setShowCheck] = useState(false);
 
-  const [botChannelId, setBotChannelId] = useState("");
+  const botChannelId = useBuilderStore((s) => s.botChannelId);
+  const setBotChannelId = useBuilderStore((s) => s.setBotChannelId);
   const [botGuildId, setBotGuildIdLocal] = useState("");
   const storeBotGuildId = useBuilderStore((s) => s.setBotGuildId);
   const setBotGuildId = (id: string) => {
